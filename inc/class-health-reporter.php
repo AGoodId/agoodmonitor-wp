@@ -165,6 +165,7 @@ class AGoodMonitor_Health_Reporter {
 		}
 
 		return [
+			'plugin_version'           => AGOODMONITOR_VERSION,
 			'wp_version'               => $wp_version,
 			'wp_update_available'      => $core_update,
 			'php_version'              => phpversion(),
