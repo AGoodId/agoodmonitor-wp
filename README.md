@@ -1,84 +1,82 @@
 # AGoodMonitor
 
-WordPress plugin som skickar hälsodata (plugins, tema, core, Site Health) till AGoodMember automatiskt varje timme. Används på alla AGoodId-kundsajter.
-
-Inkluderar WordPress security hardening — HTTP-headers, fingerprint-reducering och minskad attackyta.
+WordPress-plugin för AGoodId-kundsajter. Rapporterar hälsodata till AGoodMember automatiskt och härdnar WordPress site-wide.
 
 ---
 
 ## Funktioner
 
 ### Health Reporting
-Rapporterar automatiskt varje timme till AGoodMember API:
-- WordPress core-version + PHP-version
-- Aktiva plugins + versioner
-- Aktivt tema
-- Site Health-status
+Skickar automatiskt varje timme till AGoodMember API:
 
-### Security Hardening *(kommer i v1.1)*
+- WordPress core-version + tillgängliga uppdateringar
+- PHP-version
+- Alla installerade plugins — version, status (aktiv/inaktiv), tillgängliga uppdateringar
+- Aktivt tema + versionsinfo
+- Site Health-status (kritiska problem och rekommendationer)
+
+### Security Hardening
 Site-wide härdning som gäller oavsett aktivt tema:
-- HTTP security headers
-- WordPress fingerprint-reducering
-- XML-RPC avstängt
-- REST API user enumeration blockerat
-- Uploads-mapp skyddad mot PHP-exekvering
-
----
-
-## Installation
-
-1. Ladda upp till `wp-content/plugins/agoodmonitor/`
-2. Aktivera i WordPress admin
-3. Gå till **Inställningar > AGoodMonitor**
-4. Ange API-nyckel från AGoodMember
-
-Pluginet uppdaterar sig automatiskt från GitHub.
-
----
-
-## Inställningar
-
-| Inställning | Beskrivning |
-|-------------|-------------|
-| API-nyckel | Från AGoodMember — krävs för rapportering |
-| API-URL | Standardvärde: `https://www.agoodsport.se` |
-
----
-
-## Security Hardening — Konfiguration
-
-Alla härdningsåtgärder är aktiverade som standard och kan stängas av per sajt via `functions.php` i child theme eller i `wp-config.php`.
-
-```php
-// Stäng av en specifik åtgärd
-add_filter('agoodmonitor_disable_xmlrpc', '__return_false');       // om Jetpack behöver XML-RPC
-add_filter('agoodmonitor_block_user_enumeration', '__return_false'); // om /wp-json/wp/v2/users behövs
-add_filter('agoodmonitor_protect_uploads', '__return_false');       // om uploads-htaccess redan hanteras
-
-// Anpassa security headers
-add_filter('agoodmonitor_security_headers', function($headers) {
-    $headers['X-Frame-Options'] = 'DENY'; // striktare än SAMEORIGIN
-    unset($headers['Permissions-Policy']); // ta bort ett specifikt header
-    return $headers;
-});
-```
-
-### Vad härdningen gör
 
 | Åtgärd | Effekt |
 |--------|--------|
 | `X-Content-Type-Options: nosniff` | Förhindrar MIME-sniffing |
 | `X-Frame-Options: SAMEORIGIN` | Skyddar mot clickjacking |
 | `Referrer-Policy: strict-origin-when-cross-origin` | Begränsar referrer-läckage |
-| `Permissions-Policy` | Stänger av kamera, mikrofon, geolokalisering |
-| Ta bort `wp_generator` meta | Döljer WordPress-version från HTML |
-| Ta bort `wlwmanifest` + `rsd_link` | Tar bort oanvända discovery-endpoints |
-| Ta bort `?ver=` från assets | Döljer plugin-versioner från publika URL:er |
-| XML-RPC inaktiverat | Blockerar brute force via xmlrpc.php |
-| REST `/wp/v2/users` skyddad | Förhindrar användarnamns-enumeration |
-| `.htaccess` i uploads | PHP-filer i uploads-mappen kan inte exekveras |
+| `Permissions-Policy` | Stänger av kamera, mikrofon, geolokalisering, betalningar |
+| `X-Powered-By` borttagen | Exponerar inte PHP-version |
+| `wp_generator` meta borttagen | Döljer WordPress-version från HTML |
+| `wlwmanifest` + `rsd_link` borttagna | Tar bort oanvända discovery-endpoints |
+| `?ver=` borttagen från assets | Döljer exakta plugin-versioner från publika URL:er |
+| XML-RPC inaktiverat | Blockerar brute force och DDoS-amplifiering via xmlrpc.php |
+| REST `/wp/v2/users` skyddad | Förhindrar användarnamns-enumeration för icke-inloggade |
+| `.htaccess` i uploads | PHP-filer i uploads-mappen kan inte exekveras (Apache) |
 
-### Vad härdningen inte gör
+---
+
+## Installation
+
+1. Ladda ned senaste ZIP från [Releases](https://github.com/AGoodId/agoodmonitor-wp/releases)
+2. Gå till **Plugins > Lägg till nytt > Ladda upp plugin** i WordPress-admin
+3. Ladda upp ZIP-filen och aktivera pluginet
+4. Gå till **Inställningar > AGoodMonitor**
+5. Ange API-nyckel från AGoodMember
+
+Pluginet uppdaterar sig automatiskt när nya versioner släpps på GitHub — precis som ett plugin från WordPress.org.
+
+---
+
+## Inställningar
+
+| Inställning | Beskrivning | Standard |
+|-------------|-------------|---------|
+| API-nyckel | Från AGoodMember — krävs för rapportering | — |
+| API-URL | Ändra bara om du kör en egen instans | `https://www.agoodsport.se` |
+
+---
+
+## Härdning — Konfiguration
+
+Alla åtgärder är aktiverade som standard och kan stängas av per sajt via `functions.php` i child theme eller i `wp-config.php`:
+
+```php
+// Stäng av specifika åtgärder
+add_filter( 'agoodmonitor_disable_xmlrpc', '__return_false' );           // om Jetpack behöver XML-RPC
+add_filter( 'agoodmonitor_block_user_enumeration', '__return_false' );   // om /wp-json/wp/v2/users behövs
+add_filter( 'agoodmonitor_protect_uploads', '__return_false' );          // om .htaccess redan hanteras
+add_filter( 'agoodmonitor_strip_version_query', '__return_false' );      // om du hanterar versioning på annat sätt
+
+// Anpassa security headers
+add_filter( 'agoodmonitor_security_headers', function ( $headers ) {
+    $headers['X-Frame-Options'] = 'DENY';      // striktare än SAMEORIGIN
+    unset( $headers['Permissions-Policy'] );   // ta bort ett specifikt header
+    return $headers;
+} );
+```
+
+---
+
+## Härdning — Vad som inte ingår
 
 Dessa kräver dedikerade plugins eller konfiguration utanför pluginets scope:
 
@@ -90,42 +88,33 @@ Dessa kräver dedikerade plugins eller konfiguration utanför pluginets scope:
 | Begränsa inloggningsförsök | Wordfence eller [Login LockDown](https://wordpress.org/plugins/login-lockdown/) |
 | Regelbundna backuper | [UpdraftPlus](https://wordpress.org/plugins/updraftplus/) eller hostingbackup |
 | Content Security Policy (CSP) | Wordfence Premium eller dedikerad CSP-plugin |
-| `DISALLOW_FILE_EDIT` | `wp-config.php`: `define('DISALLOW_FILE_EDIT', true)` |
-| `DISALLOW_FILE_MODS` | `wp-config.php`: `define('DISALLOW_FILE_MODS', true)` |
-| Tvinga SSL i admin | `wp-config.php`: `define('FORCE_SSL_ADMIN', true)` |
+| `DISALLOW_FILE_EDIT` | `wp-config.php`: `define( 'DISALLOW_FILE_EDIT', true )` |
+| `DISALLOW_FILE_MODS` | `wp-config.php`: `define( 'DISALLOW_FILE_MODS', true )` |
+| Tvinga SSL i admin | `wp-config.php`: `define( 'FORCE_SSL_ADMIN', true )` |
 
 ---
 
-## Rekommenderad säkerhetskonfiguration (wp-config.php)
-
-Lägg till i `wp-config.php` på alla produktionssajter:
+## Rekommenderad wp-config.php på produktionssajter
 
 ```php
-// Inaktivera fil-redigering i dashboarden
-define('DISALLOW_FILE_EDIT', true);
-
-// Tvinga SSL i admin (kräver SSL-certifikat)
-define('FORCE_SSL_ADMIN', true);
-
-// Inaktivera felsökning i produktion
-define('WP_DEBUG', false);
-define('WP_DEBUG_LOG', false);
-define('WP_DEBUG_DISPLAY', false);
+define( 'DISALLOW_FILE_EDIT', true );  // inaktivera fil-redigering i dashboarden
+define( 'FORCE_SSL_ADMIN', true );     // tvinga HTTPS i admin (kräver SSL-certifikat)
+define( 'WP_DEBUG', false );
+define( 'WP_DEBUG_LOG', false );
+define( 'WP_DEBUG_DISPLAY', false );
 ```
 
 ---
 
-## Prioriteringsordning — säkerhet (TL;DR)
+## Säkerhetsprioriteringsordning (TL;DR)
 
 1. **2FA** på alla adminkonton
 2. **Starka lösenord** — unikt per sajt, lösenordshanterare
-3. **WAF** — Wordfence (gratis räcker för de flesta)
+3. **WAF** — Wordfence (gratisversionen räcker för de flesta)
 4. **Automatiska uppdateringar** — WordPress core, plugins, teman
 5. **Backup** — offsite, testad återställning
 6. **`DISALLOW_FILE_EDIT`** i wp-config.php
-7. **AGoodMonitor** — HTTP-headers + fingerprint-reducering + attackyta
-
-Dölja `/wp-admin`-URL:en är låg prioritet och rekommenderas inte av Wordfence — prioritera punkterna ovan istället.
+7. **AGoodMonitor** — HTTP-headers, fingerprint-reducering, attackyta
 
 ---
 
@@ -133,3 +122,25 @@ Dölja `/wp-admin`-URL:en är låg prioritet och rekommenderas inte av Wordfence
 
 - WordPress 6.0+
 - PHP 8.0+
+
+---
+
+## För utvecklare
+
+### Göra en ny release
+
+1. Uppdatera `Version:` i plugin-headern i `agoodmonitor.php`
+2. Uppdatera `AGOODMONITOR_VERSION`-konstanten till samma värde
+3. Commit + push till `main`
+4. Skapa GitHub Release med tag `vX.Y.Z`
+5. Bifoga en ZIP med plugin-katalogen som release asset
+
+Befintliga installationer visar automatiskt en uppdateringsnotis i WP-admin.
+
+### Privat GitHub-repo
+
+Lägg till i `wp-config.php` på sajter som behöver autentiserat nedladdning:
+
+```php
+define( 'AGOODMONITOR_GITHUB_TOKEN', 'ghp_...' );
+```

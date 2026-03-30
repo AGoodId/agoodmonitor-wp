@@ -35,13 +35,29 @@ CREATE TABLE {prefix}agoodmonitor_link_log (
     first_seen  DATETIME NOT NULL,
     last_seen   DATETIME NOT NULL,
     INDEX (type, last_seen),
-    UNIQUE KEY url_type (url(190), type)
+    UNIQUE KEY url_type (url(190), type)  -- 190 = säker gräns för utf8mb4 i standard row format
 ) CHARACTER SET utf8mb4;
 ```
 
 `hits`-kolumnen aggregerar — samma URL ökar räknaren istället för att skapa nya rader. Det håller tabellen liten även på trafiktunga sajter.
 
-Tabell skapas vid plugin-aktivering via `register_activation_hook`.
+Tabell skapas via `dbDelta()` med en versionscheck — **inte** enbart via `register_activation_hook`. Pluginet är redan aktivt på befintliga sajter och aktiveringshook körs inte igen vid plugin-uppdateringar.
+
+```php
+// admin_init — billigt, körs bara om version saknas/är gammal
+public function maybe_create_table(): void {
+    $installed = get_option( 'agoodmonitor_link_monitor_db_version', '0' );
+    if ( version_compare( $installed, '1.0', '>=' ) ) {
+        return;
+    }
+    global $wpdb;
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+    dbDelta( "CREATE TABLE ..." );
+    update_option( 'agoodmonitor_link_monitor_db_version', '1.0' );
+}
+```
+
+`register_activation_hook` finns kvar för nyinstallationer men `dbDelta`-logiken är det som faktiskt skapar tabellen på befintliga sajter.
 
 ---
 
@@ -86,6 +102,8 @@ public function log_404(): void {
 ### Redirect-loggning
 
 Loggar bara interna redirects (samma domän som source) — externa redirects är inte vår sak att hantera.
+
+> **Begränsning:** `wp_redirect`-hooken fångar bara redirects som WordPress (eller plugins som Yoast/Rank Math) skickar via PHP. Server-nivå-redirects i `.htaccess` eller Nginx kringgår PHP helt och loggas aldrig. Detta är acceptabelt — de flesta innehållsrelaterade redirects går via `wp_redirect`.
 
 ```php
 public function log_redirect(string $location, int $status): string {
@@ -152,6 +170,8 @@ private function upsert_log(string $url, string $referrer, string $type, string 
 ### Rensning
 
 Rader äldre än 90 dagar rensas veckovis via WP-Cron. Filterbar: `agoodmonitor_link_log_retention_days`.
+
+Kräver ett separat `wp_schedule_event`-anrop med `weekly`-intervall — utöver timrapporten. Schemaläggs i konstruktorn på `agoodmonitor_cleanup_link_log`-hooken, analogt med `CRON_HOOK` i `class-health-reporter.php`.
 
 ---
 

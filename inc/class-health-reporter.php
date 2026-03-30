@@ -11,17 +11,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class AGoodMonitor_Health_Reporter {
 
-	const OPTION_API_KEY     = 'agoodmonitor_api_key';
-	const OPTION_API_URL     = 'agoodmonitor_api_url';
-	const OPTION_LAST_REPORT = 'agoodmonitor_last_report';
-	const CRON_HOOK          = 'agoodmonitor_send_health_report';
+	const OPTION_API_KEY      = 'agoodmonitor_api_key';
+	const OPTION_API_URL      = 'agoodmonitor_api_url';
+	const OPTION_LAST_REPORT  = 'agoodmonitor_last_report';
+	const CRON_HOOK           = 'agoodmonitor_send_health_report';
+	const TRANSIENT_HEALTH    = 'agoodmonitor_health_issues';
+	const TRANSIENT_HEALTH_TTL = 6 * HOUR_IN_SECONDS;
 
 	public function __construct() {
 		add_action( 'init', [ $this, 'schedule_cron' ] );
 		add_action( self::CRON_HOOK, [ $this, 'send_health_report' ] );
 		add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
 		add_action( 'admin_init', [ $this, 'register_settings' ] );
+		add_action( 'admin_init', [ $this, 'refresh_health_cache' ] );
 		add_action( 'wp_ajax_agoodmonitor_send_report', [ $this, 'ajax_send_report' ] );
+	}
+
+	/**
+	 * Kör Site Health-tester och cacha resultaten i ett transient (6h).
+	 * Körs på admin_init så att cron-rapporter kan använda cachad data
+	 * istället för att köra alla tester synkront varje timme.
+	 */
+	public function refresh_health_cache(): void {
+		if ( false !== get_transient( self::TRANSIENT_HEALTH ) ) {
+			return;
+		}
+
+		$this->run_health_tests();
 	}
 
 	public function schedule_cron(): void {
@@ -129,40 +145,12 @@ class AGoodMonitor_Health_Reporter {
 			$theme_update = $theme_updates->response[ $theme->get_stylesheet() ]['new_version'];
 		}
 
-		// Site Health (WP 5.2+)
-		$health_issues     = [];
-		$critical_count    = 0;
-		$recommended_count = 0;
-
-		if ( class_exists( 'WP_Site_Health' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/class-wp-site-health.php';
-			$health = WP_Site_Health::get_instance();
-			$tests  = $health->get_tests();
-
-			if ( ! empty( $tests['direct'] ) ) {
-				foreach ( $tests['direct'] as $test ) {
-					if ( is_callable( $test['test'] ) ) {
-						try {
-							$result = call_user_func( $test['test'] );
-							if ( isset( $result['status'] ) && in_array( $result['status'], [ 'critical', 'recommended' ], true ) ) {
-								$health_issues[] = [
-									'label'       => $result['label'] ?? '',
-									'description' => wp_strip_all_tags( $result['description'] ?? '' ),
-									'status'      => $result['status'],
-								];
-								if ( 'critical' === $result['status'] ) {
-									$critical_count++;
-								} else {
-									$recommended_count++;
-								}
-							}
-						} catch ( \Exception $e ) {
-							// Ignorera individuella testfel
-						}
-					}
-				}
-			}
-		}
+		// Site Health — hämta från cache (fylls på av admin_init-hook).
+		// Körs inte synkront i cron för att undvika timeout på belastade sajter.
+		$cached            = get_transient( self::TRANSIENT_HEALTH );
+		$health_issues     = is_array( $cached ) ? $cached : [];
+		$critical_count    = count( array_filter( $health_issues, fn( $i ) => 'critical' === $i['status'] ) );
+		$recommended_count = count( array_filter( $health_issues, fn( $i ) => 'recommended' === $i['status'] ) );
 
 		return [
 			'plugin_version'           => AGOODMONITOR_VERSION,
@@ -180,6 +168,48 @@ class AGoodMonitor_Health_Reporter {
 			'health_recommended_count' => $recommended_count,
 			'health_issues'            => $health_issues,
 		];
+	}
+
+	/**
+	 * Kör Site Health-tester och lagra resultaten i ett transient (6h).
+	 * Anropas från admin_init (interaktiv session) — aldrig från cron.
+	 */
+	private function run_health_tests(): void {
+		if ( ! class_exists( 'WP_Site_Health' ) ) {
+			return;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/class-wp-site-health.php';
+
+		$health = WP_Site_Health::get_instance();
+		$tests  = $health->get_tests();
+		$issues = [];
+
+		if ( empty( $tests['direct'] ) ) {
+			set_transient( self::TRANSIENT_HEALTH, $issues, self::TRANSIENT_HEALTH_TTL );
+			return;
+		}
+
+		foreach ( $tests['direct'] as $test ) {
+			if ( ! is_callable( $test['test'] ) ) {
+				continue;
+			}
+
+			try {
+				$result = call_user_func( $test['test'] );
+				if ( isset( $result['status'] ) && in_array( $result['status'], [ 'critical', 'recommended' ], true ) ) {
+					$issues[] = [
+						'label'       => $result['label'] ?? '',
+						'description' => wp_strip_all_tags( $result['description'] ?? '' ),
+						'status'      => $result['status'],
+					];
+				}
+			} catch ( \Exception $e ) {
+				// Ignorera individuella testfel
+			}
+		}
+
+		set_transient( self::TRANSIENT_HEALTH, $issues, self::TRANSIENT_HEALTH_TTL );
 	}
 
 	// =========================================================================

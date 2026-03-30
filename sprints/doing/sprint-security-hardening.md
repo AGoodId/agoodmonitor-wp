@@ -45,7 +45,7 @@ Hook: `init`
 | `remove_action('wp_head', 'wlwmanifest_link')` | Windows Live Writer manifest |
 | `remove_action('wp_head', 'rsd_link')` | Really Simple Discovery |
 | `add_filter('the_generator', '__return_empty_string')` | WP-version i RSS-feeds |
-| `add_filter('wp_headers', ...)` | Ta bort `X-Powered-By` om PHP exponerar den |
+| `header_remove('X-Powered-By')` i `send_headers` | Ta bort `X-Powered-By` om PHP exponerar den (måste göras via `header_remove()`, inte `wp_headers`-filtret — PHP sätter headern direkt) |
 | `add_filter('style_loader_src', ...)` | Ta bort `?ver=` från CSS-URL:er |
 | `add_filter('script_loader_src', ...)` | Ta bort `?ver=` från JS-URL:er |
 
@@ -83,9 +83,11 @@ add_filter('rest_endpoints', function($endpoints) {
 
 Filter: `agoodmonitor_block_user_enumeration` (bool, default true).
 
+> **Känd lucka:** `/?author=1` redirectar fortfarande till `/author/username/` och exponerar användarnamn. Den vektorn täcks inte här — kräver ett separat `template_redirect`-filter och är avsiktligt utlämnat ur denna sprint.
+
 ### Skydda uploads-mappen från PHP-exekvering
 
-Lägger till en `.htaccess` i `wp-content/uploads/` om den inte redan finns:
+Lägger till en `.htaccess` i `wp-content/uploads/` om den inte redan finns. **Fungerar bara på Apache** — Nginx ignorerar `.htaccess` tyst. Koden kontrollerar `$_SERVER['SERVER_SOFTWARE']` och skriver bara filen på Apache-servrar.
 
 ```apache
 <FilesMatch "\.php$">
