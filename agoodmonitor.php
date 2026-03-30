@@ -32,3 +32,7 @@ new AGoodMonitor_Health_Reporter();
 // Security hardening.
 require_once AGOODMONITOR_DIR . 'inc/class-hardening.php';
 new AGoodMonitor_Hardening();
+
+// Link monitoring.
+require_once AGOODMONITOR_DIR . 'inc/class-link-monitor.php';
+new AGoodMonitor_Link_Monitor();

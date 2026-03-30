@@ -21,6 +21,13 @@ delete_transient( 'agoodmonitor_health_issues' );
 
 // Schemalagda cron-jobb.
 wp_clear_scheduled_hook( 'agoodmonitor_send_health_report' );
+wp_clear_scheduled_hook( 'agoodmonitor_cleanup_link_log' );
+
+// Link monitor — DB-version option och logg-tabell.
+delete_option( 'agoodmonitor_link_monitor_db_version' );
+global $wpdb;
+// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery
+$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'agoodmonitor_link_log' );
 
 // .htaccess i uploads — ta bara bort filen om vi skapade den.
 $upload_dir = wp_upload_dir();

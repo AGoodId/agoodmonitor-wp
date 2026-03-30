@@ -167,6 +167,7 @@ class AGoodMonitor_Health_Reporter {
 			'health_critical_count'    => $critical_count,
 			'health_recommended_count' => $recommended_count,
 			'health_issues'            => $health_issues,
+			'link_errors'              => apply_filters( 'agoodmonitor_collect_link_errors', [] ),
 		];
 	}
 

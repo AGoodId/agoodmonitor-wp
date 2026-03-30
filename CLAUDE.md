@@ -15,9 +15,11 @@ Pluginet är alltid aktivt och ska inte konkurrera med temats ansvar. Temats äg
 
 ```
 agoodmonitor.php              Plugin-huvud — defines, require_once, instansiering
+uninstall.php                 Städar options, transients, cron, tabell och .htaccess vid avinstallation
 inc/
   class-hardening.php         Security hardening (HTTP-headers, fingerprinting, XML-RPC, m.m.)
   class-health-reporter.php   Hälsoinsamling, cron-schemaläggning, admin UI, AJAX
+  class-link-monitor.php      Passiv 404/redirect-loggning, DB-tabell, admin UI
   github-updater.php          Auto-uppdatering via GitHub Releases
 sprints/
   doing/                      Aktiva sprints (sprint-X.md = spec + implementation guide)
@@ -78,7 +80,7 @@ Skapas på `admin_init` (en gång), bara på Apache (kontroll via `SERVER_SOFTWA
 | Sprint | Fil | Status |
 |--------|-----|--------|
 | Security Hardening | `sprints/doing/sprint-security-hardening.md` | Implementerad — klar för test |
-| Link Monitoring | `sprints/doing/sprint-link-monitoring.md` | Spec klar — ej påbörjad |
+| Link Monitoring | `sprints/doing/sprint-link-monitoring.md` | Implementerad — klar för test |
 
 ---
 
