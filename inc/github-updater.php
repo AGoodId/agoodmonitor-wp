@@ -122,7 +122,10 @@ class AGoodMonitor_GitHub_Updater {
 		$wp_filesystem->move( $result['destination'], $proper_destination );
 		$result['destination'] = $proper_destination;
 
-		activate_plugin( $this->slug );
+		// Återaktivera bara om pluginet var aktivt innan uppdateringen.
+		if ( is_plugin_active( $this->slug ) ) {
+			activate_plugin( $this->slug );
+		}
 
 		return $result;
 	}
@@ -131,12 +134,19 @@ class AGoodMonitor_GitHub_Updater {
 		if ( ! empty( $release->assets ) ) {
 			foreach ( $release->assets as $asset ) {
 				if ( str_ends_with( $asset->name, '.zip' ) ) {
-					$url   = $asset->browser_download_url;
+					// Privata repos: använd API-URL med Authorization-header (via filter
+					// på http_request_args) istället för den deprecerade access_token-query-param.
 					$token = defined( 'AGOODMONITOR_GITHUB_TOKEN' ) ? AGOODMONITOR_GITHUB_TOKEN : '';
 					if ( $token ) {
-						return add_query_arg( 'access_token', $token, $asset->url );
+						add_filter( 'http_request_args', function( $args, $url ) use ( $asset, $token ) {
+							if ( strpos( $url, 'api.github.com/repos/' . $this->github_repo ) !== false ) {
+								$args['headers']['Authorization'] = 'token ' . $token;
+							}
+							return $args;
+						}, 10, 2 );
+						return $asset->url; // API-URL, kräver Authorization-header
 					}
-					return $url;
+					return $asset->browser_download_url;
 				}
 			}
 		}

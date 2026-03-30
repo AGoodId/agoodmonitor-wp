@@ -15,6 +15,15 @@ Skickar automatiskt varje timme till AGoodMember API:
 - Aktivt tema + versionsinfo
 - Site Health-status (kritiska problem och rekommendationer)
 
+### Link Monitoring
+Passiv detection av länkfel under normal trafik — noll extra serverbelastning:
+
+- **404-loggning** — varje 404 med känd referrer loggas med URL, referrer och träffräknare
+- **Redirect-loggning** — interna 301/302-redirects loggas (interna länkar som bör uppdateras)
+- Aggregerad data skickas med i timrapporten till AGoodMember
+- Admin-sida under **Inställningar → AGoodMonitor Länkfel** med direktlänk till "Redigera inlägg" för interna referrers
+- Automatisk rensning av rader äldre än 90 dagar
+
 ### Security Hardening
 Site-wide härdning som gäller oavsett aktivt tema:
 

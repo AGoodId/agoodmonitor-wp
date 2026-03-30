@@ -3,7 +3,7 @@
  * Plugin Name: AGoodMonitor
  * Plugin URI: https://github.com/AGoodId/agoodmonitor-wp
  * Description: Skickar WordPress-hälsodata (plugins, tema, core, Site Health) till AGoodMember automatiskt varje timme.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: AGoodId
