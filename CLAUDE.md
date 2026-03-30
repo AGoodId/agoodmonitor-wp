@@ -79,8 +79,8 @@ Skapas på `admin_init` (en gång), bara på Apache (kontroll via `SERVER_SOFTWA
 
 | Sprint | Fil | Status |
 |--------|-----|--------|
-| Security Hardening | `sprints/doing/sprint-security-hardening.md` | Implementerad — klar för test |
-| Link Monitoring | `sprints/doing/sprint-link-monitoring.md` | Implementerad — klar för test |
+| Security Hardening | `sprints/done/sprint-security-hardening.md` | Klar — releasad i v1.1.0 |
+| Link Monitoring | `sprints/done/sprint-link-monitoring.md` | Klar — ej releasad ännu (väntar på v1.2.0) |
 
 ---
 
