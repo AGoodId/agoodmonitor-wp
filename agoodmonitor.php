@@ -21,6 +21,11 @@ $agoodmonitor_data = get_file_data( __FILE__, [ 'Version' => 'Version' ] );
 define( 'AGOODMONITOR_VERSION', $agoodmonitor_data['Version'] );
 define( 'AGOODMONITOR_DIR', plugin_dir_path( __FILE__ ) );
 
+register_deactivation_hook( __FILE__, function() {
+	wp_clear_scheduled_hook( 'agoodmonitor_send_health_report' );
+	wp_clear_scheduled_hook( 'agoodmonitor_cleanup_link_log' );
+} );
+
 // GitHub-based auto-updater.
 require_once AGOODMONITOR_DIR . 'inc/github-updater.php';
 new AGoodMonitor_GitHub_Updater( __FILE__, 'AGoodId/agoodmonitor-wp' );
