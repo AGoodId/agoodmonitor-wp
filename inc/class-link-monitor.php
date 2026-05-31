@@ -6,7 +6,7 @@
  *
  * Loggar:
  *   - 404:or med känd referrer (bots utan referrer filtreras bort)
- *   - Interna 301/302-redirects (interna länkar som bör uppdateras)
+ *   - Interna redirects (interna länkar som bör uppdateras)
  *
  * Data aggregeras per URL (upsert med hit-räknare) och skickas med i
  * den timvisa hälsorapporten till AGoodMember.
@@ -21,10 +21,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class AGoodMonitor_Link_Monitor {
 
-	const DB_VERSION = '1.0';
-	const CRON_HOOK  = 'agoodmonitor_cleanup_link_log';
+	const DB_VERSION    = '1.0';
+	const CRON_HOOK     = 'agoodmonitor_cleanup_link_log';
+	const CRON_INTERVAL = 'agoodmonitor_weekly';
 
 	public function __construct() {
+		add_filter( 'cron_schedules', [ $this, 'add_cron_interval' ] );
+		add_action( 'init', [ $this, 'maybe_create_table' ], 1 );
 		add_action( 'admin_init', [ $this, 'maybe_create_table' ] );
 		add_action( 'init', [ $this, 'schedule_cleanup_cron' ] );
 		add_action( self::CRON_HOOK, [ $this, 'cleanup_old_logs' ] );
@@ -42,8 +45,8 @@ class AGoodMonitor_Link_Monitor {
 
 	/**
 	 * Skapar tabellen via dbDelta om den inte redan finns eller är äldre version.
-	 * Körs på admin_init — säkrar att befintliga installationer får tabellen
-	 * utan att behöva avaktivera/aktivera pluginet.
+	 * Körs tidigt på init och admin_init så både frontend-loggning och
+	 * befintliga installationer får tabellen utan ny aktivering.
 	 */
 	public function maybe_create_table(): void {
 		$installed = get_option( 'agoodmonitor_link_monitor_db_version', '0' );
@@ -82,18 +85,29 @@ class AGoodMonitor_Link_Monitor {
 	// Cron — veckovis rensning
 	// -------------------------------------------------------------------------
 
+	public function add_cron_interval( array $schedules ): array {
+		if ( ! isset( $schedules[ self::CRON_INTERVAL ] ) ) {
+			$schedules[ self::CRON_INTERVAL ] = [
+				'interval' => WEEK_IN_SECONDS,
+				'display'  => 'AGoodMonitor weekly',
+			];
+		}
+
+		return $schedules;
+	}
+
 	public function schedule_cleanup_cron(): void {
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time(), 'weekly', self::CRON_HOOK );
+			wp_schedule_event( time(), self::CRON_INTERVAL, self::CRON_HOOK );
 		}
 	}
 
 	public function cleanup_old_logs(): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'agoodmonitor_link_log';
-		$days  = absint( apply_filters( 'agoodmonitor_link_log_retention_days', 90 ) );
+		$days  = max( 1, absint( apply_filters( 'agoodmonitor_link_log_retention_days', 90 ) ) );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Egen tabell med dynamiskt prefix; ingen WP API-wrapper finns.
 		$wpdb->query( $wpdb->prepare(
 			"DELETE FROM {$table} WHERE last_seen < %s",
 			gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) )
@@ -109,12 +123,12 @@ class AGoodMonitor_Link_Monitor {
 			return;
 		}
 
-		$url      = home_url( add_query_arg( [] ) );
+		$url      = $this->get_current_url();
 		$referrer = isset( $_SERVER['HTTP_REFERER'] )
 			? esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) )
 			: '';
 
-		if ( $this->should_ignore( $url, $referrer ) ) {
+		if ( $this->should_ignore_404( $url, $referrer ) ) {
 			return;
 		}
 
@@ -122,7 +136,7 @@ class AGoodMonitor_Link_Monitor {
 	}
 
 	/**
-	 * Loggar interna 301/302-redirects — interna länkar som bör uppdateras.
+	 * Loggar interna redirects — interna länkar som bör uppdateras.
 	 *
 	 * Begränsning: fångar bara redirects som går via wp_redirect(). Server-nivå-
 	 * redirects (.htaccess, Nginx) kringgår PHP och loggas aldrig.
@@ -130,39 +144,30 @@ class AGoodMonitor_Link_Monitor {
 	 * @return string $location oförändrad — hooken är transparant.
 	 */
 	public function log_redirect( string $location, int $status ): string {
-		if ( ! in_array( $status, [ 301, 302 ], true ) ) {
+		$statuses = array_map( 'absint', apply_filters( 'agoodmonitor_link_redirect_statuses', [ 301, 302, 307, 308 ] ) );
+		if ( ! in_array( $status, $statuses, true ) ) {
 			return $location;
 		}
 
-		$current_url = home_url( add_query_arg( [] ) );
-		$home        = home_url();
+		$current_url  = $this->get_current_url();
+		$redirect_url = $this->normalize_redirect_url( $location );
 
-		// Logga bara om källan är intern.
-		if ( strpos( $current_url, $home ) !== 0 ) {
+		if (
+			$this->should_ignore_url( $current_url )
+			|| ! $this->is_internal_url( $redirect_url )
+			|| $this->same_url( $current_url, $redirect_url )
+		) {
 			return $location;
 		}
 
-		$this->upsert_log( $current_url, '', 'redirect', $location, $status );
+		$this->upsert_log( $current_url, '', 'redirect', $redirect_url, $status );
 
 		return $location;
 	}
 
-	private function should_ignore( string $url, string $referrer ): bool {
-		$ignore_patterns = apply_filters( 'agoodmonitor_link_ignore_patterns', [
-			'/wp-admin/',
-			'/wp-json/',
-			'/wp-cron',
-			'.php',
-			'/feed/',
-			'/favicon',
-			'/robots.txt',
-			'/sitemap',
-		] );
-
-		foreach ( $ignore_patterns as $pattern ) {
-			if ( strpos( $url, $pattern ) !== false ) {
-				return true;
-			}
+	private function should_ignore_404( string $url, string $referrer ): bool {
+		if ( $this->should_ignore_url( $url ) ) {
+			return true;
 		}
 
 		// Ignorera 404:or utan referrer (direkt-trafik, bots) — minskar brus.
@@ -175,18 +180,82 @@ class AGoodMonitor_Link_Monitor {
 		return false;
 	}
 
+	private function should_ignore_url( string $url ): bool {
+		$ignore_patterns = apply_filters( 'agoodmonitor_link_ignore_patterns', [
+			'/wp-admin/',
+			'/wp-json/',
+			'/wp-cron',
+			'.php',
+			'wp-login.php',
+			'/feed/',
+			'/favicon',
+			'/robots.txt',
+			'/sitemap',
+		] );
+
+		foreach ( $ignore_patterns as $pattern ) {
+			if ( strpos( $url, $pattern ) !== false ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private function upsert_log( string $url, string $referrer, string $type, string $redirect_to, int $status ): void {
 		global $wpdb;
 		$table = $wpdb->prefix . 'agoodmonitor_link_log';
-		$now   = current_time( 'mysql' );
+		$now   = current_time( 'mysql', true );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Egen tabell med dynamiskt prefix; ingen WP API-wrapper finns.
 		$wpdb->query( $wpdb->prepare(
 			"INSERT INTO {$table} (url, referrer, type, redirect_to, status_code, hits, first_seen, last_seen)
 			 VALUES (%s, %s, %s, %s, %d, 1, %s, %s)
 			 ON DUPLICATE KEY UPDATE hits = hits + 1, last_seen = %s",
 			$url, $referrer, $type, $redirect_to, $status, $now, $now, $now
 		) );
+	}
+
+	private function get_current_url(): string {
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) )
+			: '/';
+
+		if ( '' === $request_uri || '/' !== $request_uri[0] || str_starts_with( $request_uri, '//' ) ) {
+			$request_uri = '/';
+		}
+
+		return esc_url_raw( home_url( $request_uri ) );
+	}
+
+	private function normalize_redirect_url( string $location ): string {
+		$location = trim( $location );
+
+		if ( str_starts_with( $location, '/' ) && ! str_starts_with( $location, '//' ) ) {
+			return esc_url_raw( home_url( $location ) );
+		}
+
+		if ( str_starts_with( $location, '//' ) ) {
+			$scheme = is_ssl() ? 'https:' : 'http:';
+			return esc_url_raw( $scheme . $location );
+		}
+
+		return esc_url_raw( $location );
+	}
+
+	private function is_internal_url( string $url ): bool {
+		$url_host  = wp_parse_url( $url, PHP_URL_HOST );
+		$home_host = wp_parse_url( home_url(), PHP_URL_HOST );
+
+		if ( empty( $url_host ) || empty( $home_host ) ) {
+			return false;
+		}
+
+		return strtolower( $url_host ) === strtolower( $home_host );
+	}
+
+	private function same_url( string $left, string $right ): bool {
+		return untrailingslashit( $left ) === untrailingslashit( $right );
 	}
 
 	// -------------------------------------------------------------------------
@@ -201,7 +270,7 @@ class AGoodMonitor_Link_Monitor {
 		global $wpdb;
 		$table = $wpdb->prefix . 'agoodmonitor_link_log';
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Egen tabell med dynamiskt prefix; ingen WP API-wrapper finns.
 		$results = $wpdb->get_results( $wpdb->prepare(
 			"SELECT url, referrer, type, redirect_to, status_code, hits, last_seen
 			 FROM {$table}
@@ -238,7 +307,7 @@ class AGoodMonitor_Link_Monitor {
 		if ( isset( $_GET['agoodmonitor_clear_links'] ) ) {
 			check_admin_referer( 'agoodmonitor_clear_links' );
 			global $wpdb;
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery -- TRUNCATE mot pluginets egen tabell; ingen användarinput.
 			$wpdb->query( 'TRUNCATE TABLE ' . $wpdb->prefix . 'agoodmonitor_link_log' );
 			wp_safe_redirect( admin_url( 'options-general.php?page=agoodmonitor-links&cleared=1' ) );
 			exit;
@@ -246,7 +315,7 @@ class AGoodMonitor_Link_Monitor {
 
 		global $wpdb;
 		$table = $wpdb->prefix . 'agoodmonitor_link_log';
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery -- Egen tabell med dynamiskt prefix; ingen WP API-wrapper finns.
 		$rows = $wpdb->get_results(
 			"SELECT url, referrer, type, redirect_to, status_code, hits, last_seen
 			 FROM {$table}
@@ -281,6 +350,7 @@ class AGoodMonitor_Link_Monitor {
 							<th>URL</th>
 							<th>Typ</th>
 							<th>Träffar</th>
+							<th>Redirect till</th>
 							<th>Referrer</th>
 							<th>Senast sedd</th>
 						</tr>
@@ -299,10 +369,19 @@ class AGoodMonitor_Link_Monitor {
 							<td><code><?php echo esc_html( $row['url'] ); ?></code></td>
 							<td>
 								<span style="color: <?php echo '404' === $row['type'] ? '#d63638' : '#996800'; ?>; font-weight: 600;">
-									<?php echo esc_html( strtoupper( $row['type'] ) ); ?>
+									<?php echo esc_html( strtoupper( $row['type'] ) . ' (' . (int) $row['status_code'] . ')' ); ?>
 								</span>
 							</td>
 							<td><?php echo esc_html( number_format_i18n( (int) $row['hits'] ) ); ?></td>
+							<td>
+								<?php if ( ! empty( $row['redirect_to'] ) ) : ?>
+									<a href="<?php echo esc_url( $row['redirect_to'] ); ?>" target="_blank" rel="noreferrer">
+										<?php echo esc_html( $row['redirect_to'] ); ?>
+									</a>
+								<?php else : ?>
+									<em style="color: #999;">—</em>
+								<?php endif; ?>
+							</td>
 							<td>
 								<?php if ( $row['referrer'] ) : ?>
 									<a href="<?php echo esc_url( $row['referrer'] ); ?>" target="_blank" rel="noreferrer">

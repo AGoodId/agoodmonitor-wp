@@ -19,7 +19,7 @@ Skickar automatiskt varje timme till AGoodMember API:
 Passiv detection av länkfel under normal trafik — noll extra serverbelastning:
 
 - **404-loggning** — varje 404 med känd referrer loggas med URL, referrer och träffräknare
-- **Redirect-loggning** — interna 301/302-redirects loggas (interna länkar som bör uppdateras)
+- **Redirect-loggning** — interna redirects loggas med mål-URL (interna länkar som bör uppdateras)
 - Aggregerad data skickas med i timrapporten till AGoodMember
 - Admin-sida under **Inställningar → AGoodMonitor Länkfel** med direktlänk till "Redigera inlägg" för interna referrers
 - Automatisk rensning av rader äldre än 90 dagar
