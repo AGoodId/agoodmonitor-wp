@@ -34,7 +34,7 @@ class AGoodMonitor_Health_Reporter {
 	 * istället för att köra alla tester synkront varje timme.
 	 */
 	public function refresh_health_cache(): void {
-		if ( false !== get_transient( self::TRANSIENT_HEALTH ) ) {
+		if ( null !== $this->get_cached_health_report() ) {
 			return;
 		}
 
@@ -268,21 +268,21 @@ class AGoodMonitor_Health_Reporter {
 		}
 
 		if ( isset( $cached['issues'] ) && is_array( $cached['issues'] ) ) {
+			$schema     = (int) ( $cached['schema'] ?? 1 );
+			$checked_at = $cached['checked_at'] ?? null;
+
+			if ( $schema < self::REPORT_SCHEMA || empty( $checked_at ) ) {
+				delete_transient( self::TRANSIENT_HEALTH );
+				return null;
+			}
+
 			return $cached;
 		}
 
-		// Bakåtkompatibilitet med v1-cache: transienten var en ren issue-lista.
-		$issues = array_values( array_filter( $cached, 'is_array' ) );
-
-		return [
-			'schema'            => 1,
-			'checked_at'        => null,
-			'issues'            => $issues,
-			'critical_count'    => count( array_filter( $issues, fn( $i ) => 'critical' === ( $i['status'] ?? null ) ) ),
-			'recommended_count' => count( array_filter( $issues, fn( $i ) => 'recommended' === ( $i['status'] ?? null ) ) ),
-			'good_count'        => 0,
-			'test_count'        => count( $issues ),
-		];
+		// v1-cache var en ren issue-lista utan metadata. Rensa den så nästa
+		// rapport får riktiga V2-fält som checked_at och test_count.
+		delete_transient( self::TRANSIENT_HEALTH );
+		return null;
 	}
 
 	private function run_single_health_test( array $test, string $test_id ): ?array {
