@@ -166,6 +166,7 @@ class AGoodMonitor_Health_Reporter {
 		return [
 			'report_schema'             => self::REPORT_SCHEMA,
 			'plugin_version'           => AGOODMONITOR_VERSION,
+			'home_url'                 => home_url(),
 			'wp_version'               => $wp_version,
 			'wp_major_version'         => $this->get_major_version( $wp_version ),
 			'wp_70_ready'              => version_compare( $wp_version, '7.0', '>=' ),
