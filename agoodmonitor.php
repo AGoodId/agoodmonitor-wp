@@ -38,6 +38,10 @@ new AGoodMonitor_Health_Reporter();
 require_once AGOODMONITOR_DIR . 'inc/class-hardening.php';
 new AGoodMonitor_Hardening();
 
+// Optional bot protection (disabled until configured and explicitly enabled).
+require_once AGOODMONITOR_DIR . 'inc/class-turnstile.php';
+new AGoodMonitor_Turnstile();
+
 // Link monitoring.
 require_once AGOODMONITOR_DIR . 'inc/class-link-monitor.php';
 new AGoodMonitor_Link_Monitor();

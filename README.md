@@ -41,6 +41,16 @@ Site-wide härdning som gäller oavsett aktivt tema:
 | REST `/wp/v2/users` skyddad | Förhindrar användarnamns-enumeration för icke-inloggade |
 | `.htaccess` i uploads | PHP-filer i uploads-mappen kan inte exekveras (Apache) |
 
+### Valbart botskydd: Cloudflare Turnstile
+
+**Avstängt som standard på varje sajt**, även vid uppdatering. Under
+**Inställningar → AGoodMonitor Turnstile** sparas sajtens nycklar, ett verkligt
+konfigurationsprov körs och skyddet aktiveras uttryckligen. Skyddar WordPress
+standardinloggning och begäran om återställningsmejl, med separat WooCommerce-val.
+Servern kontrollerar token, värdnamn och formulärets åtgärd före behandling.
+Vid verifieringsfel blockeras formuläret. [Installation, återställning,
+konflikter och pilotchecklista](docs/turnstile.md).
+
 ---
 
 ## Installation
@@ -66,7 +76,7 @@ Pluginet uppdaterar sig automatiskt när nya versioner släpps på GitHub — pr
 
 ## Härdning — Konfiguration
 
-Alla åtgärder är aktiverade som standard och kan stängas av per sajt via `functions.php` i child theme eller i `wp-config.php`:
+Åtgärderna i härdningstabellen är aktiverade som standard och kan stängas av per sajt via `functions.php` i child theme eller i `wp-config.php`. Turnstile är en separat, valbar modul som är avstängd som standard:
 
 ```php
 // Stäng av specifika åtgärder
