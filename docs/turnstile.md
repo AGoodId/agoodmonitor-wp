@@ -142,13 +142,15 @@ WordPress 7.1.3, PHP 8.1.23, WooCommerce 11.2.1 och Two Factor 0.17.0:
 resetbegäran, TOTP och reservkod. Siteverify är simulerat och all e-post fångas.
 Äldre stödda WP/PHP-versioner och andra 2FA-tillägg har inte körts.
 
-På `agoodsite.se` är WordPress standardinloggning nåbar (kontrollerat 2026-10-17).
-Ingen inloggad administratörssession, tilläggsinventering eller separat testkonto
-var tillgänglig vid kontrollen. **Ingen installation eller aktivering har gjorts
-på agoodsite.se eller det tidigare pilotmålet agoodid2026.agoodsite.se.**
-Riktigt Cloudflare-prov, browser-widget, sajtens faktiska
-CSP/cache och pilotens 2FA/reservkoder återstår före införande. En godkänd lokal
-suite innebär inte att pilotsajten är verifierad.
+På `agoodsite.se` installerades pilotversionen 2026-10-17. AGoodMonitor är
+aktivt, men **Turnstile är avstängt och inte konfigurerat**. Färsk privat
+fil-/databasbackup, filåtkomst och serverstyrt nödstopp är verifierade. Ett separat
+testkonto finns och baseline-resetmejl har verifierats i testbrevlådan.
+Se [pilotprotokollet](turnstile-agoodsite-pilot.md) för omfattning och begränsningar.
+Riktiga Cloudflare-nycklar, konfigurationsprov, browser-widget och pilotens
+inloggning/2FA/reservkoder återstår före aktivering. Ingen installation har gjorts
+på det tidigare pilotmålet agoodid2026.agoodsite.se eller på kundsajter. En godkänd
+lokal suite innebär inte att pilotsajten är verifierad.
 
 ## Officiella källor (kontrollerade 2026-10-16)
 

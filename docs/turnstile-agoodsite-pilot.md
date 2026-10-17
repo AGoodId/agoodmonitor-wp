@@ -78,7 +78,46 @@ WordPress-laddningen. Återställningskonstanten påverkar inte separat 2FA.
 ## Kvar före färdig installation
 
 Installation med avstängt Turnstile är genomförd. Före aktivering återstår
-verifierad backup och filåtkomst för återställning, separat testkonto samt riktiga
-Cloudflare-nycklar och konfigurationsprov. Tvåfaktorstödet är testat lokalt med
+riktiga Cloudflare-nycklar och konfigurationsprov samt inloggningsprov med
+testkontot nedan. Tvåfaktorstödet är testat lokalt med
 Two Factor, men inget 2FA-tillägg har installerats på agoodsite.se. PR #4 är
 fortsatt ett utkast; ingen release eller installation på kundsajter har gjorts.
+
+## Backup och återställningsåtkomst verifierade 2026-10-17
+
+- cPanel-kontot `agoodsit` har Acronis-backuper. Återställningspunkten
+  **17 oktober 2026 kl. 02:43** gick att öppna och innehåller filer och databaser,
+  inklusive sajtens databas `agoodsit_wp295` (tabellprefix `wpqv_`). Detta är en
+  äldre punkt från före pilotinstallationen, inte en nyss tagen backup.
+- En färsk kopia av **hela public_html och databasen** skapades separat före
+  Turnstile-aktivering i `/home/agoodsit/.agoodmonitor-backups/20261017-pre-turnstile/`.
+  `database.sql` exporterades via WP-CLI och `site.tar.gz` skapades via tar.
+  Total storlek cirka **984 MB**. Katalogen har behörighet **700**, filerna **600**
+  och ligger utanför alla publika dokumentrötter.
+- Gzip-integriteten är kontrollerad. Arkivet innehåller `public_html/wp-config.php`
+  och installerad AGoodMonitor. SHA-256 för databasen:
+  `85a655fd8e2fcbc3482a5d5708ca9cea0d80484d23562312c66ad25bf195e572`.
+  SHA-256 för filarkivet:
+  `ae398a4a8fe3fec2a3f084bcfbd2a4831bc97b8401730e1908fe1dbab357edb4`.
+  Ingen full återläsning av databas/hela sajten har utförts på den levande sajten.
+- Både cPanels filhanterare och terminal når `/home/agoodsit/public_html/wp-config.php`.
+  Nödstoppet provades med `wp config set AGOODMONITOR_TURNSTILE_DISABLE true --raw`
+  (med `--path=/home/agoodsit/public_html`). Admin visade **Avstängt via
+  serverkonfiguration**. Konstanten togs sedan bort med `wp config delete` och
+  PHP-syntaxkontrollerades. Detta gjordes medan Turnstile redan var avstängt.
+- Vid utelåsning kan samma terminalkommando eller filhanteraren användas för
+  nödstopp. Vid pluginfel: inaktivera AGoodMonitor via WP-CLI med
+  `--skip-plugins --skip-themes` eller byt namn på pluginmappen via filhanteraren.
+  Full återläsning ersätter senare data; välj därför relevanta filer eller
+  databas i Acronis, eller läs tillbaka den privata kopian under kontrollerat
+  underhåll. Gör ingen full återläsning enbart för att ta bort Turnstile-kravet.
+
+## Separat testkonto
+
+`agoodmonitor_turnstile_test` (ID 8) skapades med rollen **Prenumerant** och
+kontrollerad testadress `mats+turnstile-test@agoodid.se`. Ingen administratörsroll
+eller kontoinbjudan skickades. Ett baseline-prov av native lösenordsåterställning
+med avstängt Turnstile gav bekräftelsesidan och ett verifierat mejl i inkorgen
+den 17 oktober kl. 21:15. Endast testkontot berördes. Användaren behöver själv
+slutföra lösenordsbytet; inga lösenord eller resetlänkar finns i dokumentationen.
+Cloudflare-inloggning är separat och inväntas innan widget och nyckelpar kan skapas.
