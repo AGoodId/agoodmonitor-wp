@@ -151,7 +151,8 @@ Se [pilotprotokollet](turnstile-agoodsite-pilot.md) för omfattning och begräns
 Användaren bekräftade lyckad inloggning med testkontots nya lösenord i privat
 fönster. Nyckelparet är sparat i 1Password, privata Employee-valvet, som
 AGoodMonitor Turnstile – agoodsite.se. Pilotens 2FA/reservkoder återstår;
-2FA-tillägget är inte installerat där och kompatibiliteten är hittills testad lokalt.
+Two Factor 0.17.0 är installerat från WordPress.org men testkontots registrering
+och live-prov med TOTP/reservkoder återstår. Kompatibiliteten är hittills testad lokalt.
 Ingen installation har gjorts
 på det tidigare pilotmålet agoodid2026.agoodsite.se eller på kundsajter. En godkänd
 lokal suite innebär inte att pilotsajten är verifierad.

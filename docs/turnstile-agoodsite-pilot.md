@@ -79,7 +79,8 @@ WordPress-laddningen. Återställningskonstanten påverkar inte separat 2FA.
 
 Installation, Turnstile-aktivering, testkontots inloggningsprov och sparande i
 1Password är genomförda, se proven nedan. Tvåfaktorstödet är testat lokalt med
-Two Factor, men inget 2FA-tillägg har installerats på agoodsite.se. PR #4 är
+Two Factor. Two Factor 0.17.0 är nu installerat på agoodsite.se; registrering och
+verifiering på testkontot återstår enligt avsnittet nedan. PR #4 är
 fortsatt ett utkast; ingen release eller installation på kundsajter har gjorts.
 
 ## Backup och återställningsåtkomst verifierade 2026-10-17
@@ -145,5 +146,29 @@ Användaren har därefter bekräftat att testkontots lösenordsbyte är klart.
   verifiering; agenten läste inte testlösenordet. Administratörssessionen
   behålls i in-app-webbläsaren.
   Utgången/återanvänd token och driftstörningar har verifierats lokalt enligt
-  testsuiten, men simuleras inte på den aktiverade sajten. 2FA är ännu inte
-  installerat och kan därför inte räknas som verifierat i denna pilot.
+  testsuiten, men simuleras inte på den aktiverade sajten. 2FA-proven följs
+  separat nedan och är ännu inte verifierade i denna pilot.
+
+## Two Factor-installation 2026-10-17
+
+Efter separat beställning installerades och aktiverades **Two Factor 0.17.0**,
+slug `two-factor`, från WordPress.org:s officiella katalog. Turnstile visar
+fortsatt **Aktiverat** efter installationen. Andra användares 2FA-konfiguration
+ändrades inte och ingen generell rollpolicy infördes.
+
+Testkontots profil (ID 8) är förberedd för autentiseringsapp som primär metod
+och återställningskoder som reserv. Användaren behöver själv registrera den nya
+autentiseringshemligheten, verifiera en kod, spara reservkoderna säkert och spara
+profilen. Ingen QR-hemlighet eller reservkod sparas i dokumentationen.
+
+Efter registrering ska följande live-prov köras med testkontot: normal login med
+Turnstile följt av TOTP, avvisad felaktig TOTP, login med en reservkod, samt nekat
+återbruk av samma reservkod. Behåll administratörssessionen under proven.
+De två 2FA-stegen ska gå via Two Factors egna handlers utan ett extra
+Turnstile-krav. Dessa live-prov är **inte utförda ännu**.
+
+Vid problem med testkontots 2FA: använd den inloggade administratören och ändra
+endast testkontots metoder i Användare → testkontots profil. Servervägen finns
+även via Two Factors `wp two-factor`-kommandon; en full 2FA-reset är en separat,
+avsiktlig säkerhetsåtgärd och ska inte göras automatiskt vid fel. Turnstiles
+återställningskonstant påverkar inte Two Factor.
