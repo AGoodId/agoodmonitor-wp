@@ -150,9 +150,12 @@ nekas med 403; riktig giltig verifiering tillåter resetmejl till testbrevlådan
 Se [pilotprotokollet](turnstile-agoodsite-pilot.md) för omfattning och begränsningar.
 Användaren bekräftade lyckad inloggning med testkontots nya lösenord i privat
 fönster. Nyckelparet är sparat i 1Password, privata Employee-valvet, som
-AGoodMonitor Turnstile – agoodsite.se. Pilotens 2FA/reservkoder återstår;
-Two Factor 0.17.0 är installerat från WordPress.org men testkontots registrering
-och live-prov med TOTP/reservkoder återstår. Kompatibiliteten är hittills testad lokalt.
+AGoodMonitor Turnstile – agoodsite.se. Two Factor 0.17.0 är installerat från
+WordPress.org. Testkontots TOTP-inloggning är användarbekräftad. Agenten har
+verifierat riktig reservkodsinloggning efter Turnstile, minskning från tio till
+nio oanvända koder och nekat återbruk av samma kod i en ny inloggning. Ett felaktigt
+TOTP-försök nekades också. Andra användares 2FA eller generell rollpolicy ingår
+inte i dessa prov.
 Ingen installation har gjorts
 på det tidigare pilotmålet agoodid2026.agoodsite.se eller på kundsajter. En godkänd
 lokal suite innebär inte att pilotsajten är verifierad.

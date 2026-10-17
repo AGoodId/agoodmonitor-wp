@@ -147,7 +147,8 @@ Användaren har därefter bekräftat att testkontots lösenordsbyte är klart.
   behålls i in-app-webbläsaren.
   Utgången/återanvänd token och driftstörningar har verifierats lokalt enligt
   testsuiten, men simuleras inte på den aktiverade sajten. 2FA-proven följs
-  separat nedan och är ännu inte verifierade i denna pilot.
+  separat nedan; reservkodsproven är nu genomförda och TOTP-inloggningen är
+  användarbekräftad.
 
 ## Two Factor-installation 2026-10-17
 
@@ -156,10 +157,10 @@ slug `two-factor`, från WordPress.org:s officiella katalog. Turnstile visar
 fortsatt **Aktiverat** efter installationen. Andra användares 2FA-konfiguration
 ändrades inte och ingen generell rollpolicy infördes.
 
-Testkontots profil (ID 8) är förberedd för autentiseringsapp som primär metod
-och återställningskoder som reserv. Användaren behöver själv registrera den nya
-autentiseringshemligheten, verifiera en kod, spara reservkoderna säkert och spara
-profilen. Ingen QR-hemlighet eller reservkod sparas i dokumentationen.
+Testkontots profil (ID 8) har autentiseringsapp och återställningskoder
+konfigurerade av användaren. Ingen QR-hemlighet eller reservkod sparas i
+dokumentationen. Metoden Standard väljer autentiseringsappen i den aktuella
+konfigurationen, vilket verifierades i verklig inloggning.
 
 Efter registrering ska följande live-prov köras med testkontot: normal login med
 Turnstile följt av TOTP, avvisad felaktig TOTP, login med en reservkod, samt nekat
@@ -167,14 +168,31 @@ Turnstile följt av TOTP, avvisad felaktig TOTP, login med en reservkod, samt ne
 De två 2FA-stegen ska gå via Two Factors egna handlers utan ett extra
 Turnstile-krav.
 
-Uppföljning efter användarens registrering: testkontot har autentiseringsappen
-konfigurerad och aktiverad, men reservmetoden är avmarkerad och visar **0
-oanvända koder**. Användaren ombads komplettera just testkontots reservkoder.
-I separat Chrome-session gick riktig login med testkontots lösenord och giltig
-Turnstile vidare till Two Factors TOTP-ruta. Ett felaktigt kodförsök nekades med
-kort tidsbegränsning. Ingen extra Turnstile-widget krävdes på TOTP-steget.
-Giltig TOTP-kod från användarens Google Authenticator, reservkod och avvisat
-återbruk av reservkod är fortfarande **inte verifierade** på pilotsajten.
+Slutlig uppföljning efter att användaren sparat rätt profil:
+
+- Aktuell profil visade rätt testkonto, båda metoderna aktiva och **10 oanvända
+  reservkoder**. En äldre öppnad flik gav tidigare inaktuell status; den aktuella
+  sparade profilen verifierades separat.
+- Riktig login med testkontots lösenord och giltig Turnstile gick vidare till
+  Two Factors TOTP-ruta. Ett felaktigt kodförsök nekades med kort tidsbegränsning.
+  Ingen extra Turnstile-widget krävdes på 2FA-steget. Användaren bekräftade sedan
+  lyckad inloggning med sin Google Authenticator-kod; den delen är
+  användarbekräftad, inte agentinmatad.
+- I en separat Chrome-session användes en av de befintliga reservkoderna från
+  anteckningsfältet i 1Password-posten **turnstile test**. Efter lösenord och
+  giltig Turnstile accepterades koden. Agenten verifierade **Adminpanel** och
+  **Hej, AGoodMonitor testkonto**. Profilen visade därefter **9 oanvända koder**.
+- Testsessionen loggades ut. I en ny inloggning, med ny giltig Turnstile-token,
+  provades exakt samma reservkod. Two Factor nekade med **FEL: Ogiltig
+  verifieringskod** och lämnade användaren på verifieringssteget.
+- Testsessionen lämnades utloggad. 1Password-anteckningen kompletterades med att
+  första koden i listan är förbrukad och nio återstår. Alla ursprungliga koder
+  bevarades i posten; inga kodvärden kopierades till testprotokollet.
+
+Live-proven av samarbetet mellan Turnstile och Two Factor är därmed genomförda
+för testkontot, med den ovan angivna skillnaden i bevis för TOTP respektive
+reservkod. Det innebär inte att andra användares 2FA är aktiverat eller att en
+generell rollpolicy finns.
 
 Vid problem med testkontots 2FA: använd den inloggade administratören och ändra
 endast testkontots metoder i Användare → testkontots profil. Servervägen finns
