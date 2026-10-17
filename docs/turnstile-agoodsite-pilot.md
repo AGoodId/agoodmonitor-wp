@@ -9,13 +9,30 @@ installation på Lorensbergs ingår.
 
 - `https://agoodsite.se/wp-admin/plugins.php` leder till sajtens egen
   WordPress-inloggning med titeln **AGoodSite**.
-- Chrome har ingen tillgänglig administratörssession på denna sajt.
+- Användaren återställde lösenordet och loggade in som administratör i
+  in-app-webbläsaren den 17 oktober 2026.
 - Turnstile-implementationen finns i PR #4. Senast verifierat lokalt med 65
   integrationsassertioner och 15 riktiga HTTP-assertioner. Cloudflare simulerades;
   inga mejl skickades ut från testmiljön.
-- Ingen ändring har gjorts på servern. Installerad AGoodMonitor-version,
-  WordPress/PHP-version, 2FA, WooCommerce, CAPTCHA och auto-update-status är
-  ännu inte inventerade.
+- Pilotpaketet från commit `3022309` installerades och AGoodMonitor aktiverades
+  den 17 oktober 2026. Plugin-headern visar version **1.3.2**. Paketets SHA-256:
+  `c97a793e925b787d32e6f04fee5fd3f118ee97ee5ae8534d6fb78b5e5bdd94cf`.
+- Ingen AGoodMonitor-version var tidigare installerad. WordPress installerade
+  paketet som ett nytt tillägg; ingen befintlig plugin ersattes och ingen tidigare
+  AGoodMonitor-katalog behövde säkerhetskopieras. Full sajtbackup och åtkomst till
+  wp-config.php är ännu inte verifierade inför senare Turnstile-aktivering.
+- Inventerat: WordPress **7.1.3**, PHP **8.3.35**, LiteSpeed. Ingen WooCommerce,
+  2FA eller annat CAPTCHA-tillägg i den installerade tilläggslistan. Två drop-ins:
+  LiteSpeed object-cache.php och maintenance.php. Password Protected är aktivt.
+- Admin visar **Status: Inte konfigurerat**, tomma nyckelfält och avmarkerad
+  aktivering/WooCommerce. Inga nycklar sparades och Turnstile är avstängt.
+- Verifierat efter aktivering: admin och startsidan renderas, native login- och
+  lostpassword-formulär visas. Båda formulärens DOM har noll Turnstile-widgetar
+  och noll skript från challenges.cloudflare.com. Inga POST-prov eller nya
+  återställningsmejl skickades under installationen. Ett nytt riktigt loginprov
+  och Cloudflare-verifiering återstår med separat testkonto.
+- WordPress uppdaterade även Site Kits svenska översättning automatiskt som
+  del av installationen. Ingen annan pluginuppdatering beställdes eller kördes.
 
 ## Installera utan att aktivera formulärskydd
 
@@ -60,7 +77,8 @@ WordPress-laddningen. Återställningskonstanten påverkar inte separat 2FA.
 
 ## Kvar före färdig installation
 
-Administratörsinloggning och backup-/serveråtkomst behövs för att inventera och
-installera utan att skriva över okända ändringar. Riktig Cloudflare-verifiering
-och testkonton återstår därefter. Ett färdigt ZIP-paket är inte en bekräftelse på
-att installationen genomförts.
+Installation med avstängt Turnstile är genomförd. Före aktivering återstår
+verifierad backup och filåtkomst för återställning, separat testkonto samt riktiga
+Cloudflare-nycklar och konfigurationsprov. Tvåfaktorstödet är testat lokalt med
+Two Factor, men inget 2FA-tillägg har installerats på agoodsite.se. PR #4 är
+fortsatt ett utkast; ingen release eller installation på kundsajter har gjorts.
