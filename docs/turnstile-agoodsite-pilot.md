@@ -77,9 +77,8 @@ WordPress-laddningen. Återställningskonstanten påverkar inte separat 2FA.
 
 ## Kvar före färdig installation
 
-Installation och Turnstile-aktivering är genomförda, se proven nedan. Kvar är
-lyckat inloggningsprov med testkontots nya lösenord och begärt sparande av
-nyckelparet i 1Password. Tvåfaktorstödet är testat lokalt med
+Installation, Turnstile-aktivering, testkontots inloggningsprov och sparande i
+1Password är genomförda, se proven nedan. Tvåfaktorstödet är testat lokalt med
 Two Factor, men inget 2FA-tillägg har installerats på agoodsite.se. PR #4 är
 fortsatt ett utkast; ingen release eller installation på kundsajter har gjorts.
 
@@ -129,8 +128,10 @@ Användaren har därefter bekräftat att testkontots lösenordsbyte är klart.
   Managed-läge, pre-clearance av. Ingen DNS-ändring gjordes.
 - Nyckelparet överfördes direkt till WordPress. Secret finns inte i denna PR
   eller dokumentation. Efter sparande är secret-input tom och admin anger att
-  nyckeln finns sparad. Användaren har beställt separat förvaring i 1Password;
-  det sparandet återstår eftersom appen är låst.
+  nyckeln finns sparad. Nyckelparet sparades efter användarens upplåsning i
+  1Password, privata **Employee**-valvet, som **AGoodMonitor Turnstile – agoodsite.se**.
+  Posten är API Credentials: site key i username, secret key i det dolda
+  credential-fältet. Sparad titel, valv och maskerat credential verifierades.
 - Det riktiga serverprovet med `agm_setup` och `agoodsite.se` lyckades. Därefter
   aktiverades Turnstile; admin visar **Status: Aktiverat**. WooCommerce är av.
 - Fyra direkta POST-prov med testkontot: login och lostpassword, vardera med
@@ -139,8 +140,10 @@ Användaren har därefter bekräftat att testkontots lösenordsbyte är klart.
 - Native lostpassword med automatiskt godkänd riktig Cloudflare-token gick
   igenom. Bekräftelsesidan visades och ett nytt mejl till testadressen verifierades
   i inkorgen **kl. 21:49**. Ingen annan användares återställning begärdes.
-- Hela lyckade inloggningen med testkontots nya lösenord inväntar användarens
-  prov i privat fönster. Administratörssessionen behålls i in-app-webbläsaren.
+- Användaren bekräftade **inloggad** efter begärt fullständigt inloggningsprov
+  i privat fönster med testkontots nya lösenord. Detta är användarbekräftad
+  verifiering; agenten läste inte testlösenordet. Administratörssessionen
+  behålls i in-app-webbläsaren.
   Utgången/återanvänd token och driftstörningar har verifierats lokalt enligt
   testsuiten, men simuleras inte på den aktiverade sajten. 2FA är ännu inte
   installerat och kan därför inte räknas som verifierat i denna pilot.

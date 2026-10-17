@@ -148,8 +148,10 @@ Färsk privat fil-/databasbackup, filåtkomst och serverstyrt nödstopp är veri
 Separat testkonto finns. Direkta login/reset-POST med saknad eller ogiltig token
 nekas med 403; riktig giltig verifiering tillåter resetmejl till testbrevlådan.
 Se [pilotprotokollet](turnstile-agoodsite-pilot.md) för omfattning och begränsningar.
-Lyckad inloggning med testkontots nya lösenord och pilotens 2FA/reservkoder
-återstår. Begärt sparande av nycklarna i 1Password inväntar upplåsning av appen.
+Användaren bekräftade lyckad inloggning med testkontots nya lösenord i privat
+fönster. Nyckelparet är sparat i 1Password, privata Employee-valvet, som
+AGoodMonitor Turnstile – agoodsite.se. Pilotens 2FA/reservkoder återstår;
+2FA-tillägget är inte installerat där och kompatibiliteten är hittills testad lokalt.
 Ingen installation har gjorts
 på det tidigare pilotmålet agoodid2026.agoodsite.se eller på kundsajter. En godkänd
 lokal suite innebär inte att pilotsajten är verifierad.
