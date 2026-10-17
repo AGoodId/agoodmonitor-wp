@@ -1,8 +1,10 @@
 # Turnstile: installation och drift
 
 Modulen är en gemensam investering i AGoodMonitor, separat från Lorensbergs
-fasta införandepris 7 500 kr exkl. moms. Första pilotmål är
-`agoodid2026.agoodsite.se`. Lorensbergs väntar på Arvids godkännande. Ingen
+fasta införandepris 7 500 kr exkl. moms. Användaren har 2026-10-17 ändrat första
+installationsmålet till **`agoodsite.se`** från `agoodid2026.agoodsite.se`.
+Se [installationsprotokoll för agoodsite.se](turnstile-agoodsite-pilot.md).
+Lorensbergs väntar på Arvids godkännande. Ingen
 kundinstallation, kundaktivering eller generell release ingår i denna PR.
 
 ## Aktivera på en sajt
@@ -140,10 +142,11 @@ WordPress 7.1.3, PHP 8.1.23, WooCommerce 11.2.1 och Two Factor 0.17.0:
 resetbegäran, TOTP och reservkod. Siteverify är simulerat och all e-post fångas.
 Äldre stödda WP/PHP-versioner och andra 2FA-tillägg har inte körts.
 
-På `agoodid2026.agoodsite.se` är standardinloggningen nåbar. Ingen inloggad
-administratörssession, tilläggsinventering eller separat testkonto var
-tillgänglig vid inledande kontroll. **Ingen installation eller aktivering har
-gjorts på pilotsajten.** Riktigt Cloudflare-prov, browser-widget, sajtens faktiska
+På `agoodsite.se` är WordPress standardinloggning nåbar (kontrollerat 2026-10-17).
+Ingen inloggad administratörssession, tilläggsinventering eller separat testkonto
+var tillgänglig vid kontrollen. **Ingen installation eller aktivering har gjorts
+på agoodsite.se eller det tidigare pilotmålet agoodid2026.agoodsite.se.**
+Riktigt Cloudflare-prov, browser-widget, sajtens faktiska
 CSP/cache och pilotens 2FA/reservkoder återstår före införande. En godkänd lokal
 suite innebär inte att pilotsajten är verifierad.
 
