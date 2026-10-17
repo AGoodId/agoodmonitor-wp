@@ -142,13 +142,15 @@ WordPress 7.1.3, PHP 8.1.23, WooCommerce 11.2.1 och Two Factor 0.17.0:
 resetbegäran, TOTP och reservkod. Siteverify är simulerat och all e-post fångas.
 Äldre stödda WP/PHP-versioner och andra 2FA-tillägg har inte körts.
 
-På `agoodsite.se` installerades pilotversionen 2026-10-17. AGoodMonitor är
-aktivt, men **Turnstile är avstängt och inte konfigurerat**. Färsk privat
-fil-/databasbackup, filåtkomst och serverstyrt nödstopp är verifierade. Ett separat
-testkonto finns och baseline-resetmejl har verifierats i testbrevlådan.
+På `agoodsite.se` installerades och aktiverades pilotversionen 2026-10-17.
+**Turnstile är aktiverat** efter riktigt Cloudflare-konfigurationsprov.
+Färsk privat fil-/databasbackup, filåtkomst och serverstyrt nödstopp är verifierade.
+Separat testkonto finns. Direkta login/reset-POST med saknad eller ogiltig token
+nekas med 403; riktig giltig verifiering tillåter resetmejl till testbrevlådan.
 Se [pilotprotokollet](turnstile-agoodsite-pilot.md) för omfattning och begränsningar.
-Riktiga Cloudflare-nycklar, konfigurationsprov, browser-widget och pilotens
-inloggning/2FA/reservkoder återstår före aktivering. Ingen installation har gjorts
+Lyckad inloggning med testkontots nya lösenord och pilotens 2FA/reservkoder
+återstår. Begärt sparande av nycklarna i 1Password inväntar upplåsning av appen.
+Ingen installation har gjorts
 på det tidigare pilotmålet agoodid2026.agoodsite.se eller på kundsajter. En godkänd
 lokal suite innebär inte att pilotsajten är verifierad.
 

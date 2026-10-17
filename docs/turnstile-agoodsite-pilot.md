@@ -77,9 +77,9 @@ WordPress-laddningen. Återställningskonstanten påverkar inte separat 2FA.
 
 ## Kvar före färdig installation
 
-Installation med avstängt Turnstile är genomförd. Före aktivering återstår
-riktiga Cloudflare-nycklar och konfigurationsprov samt inloggningsprov med
-testkontot nedan. Tvåfaktorstödet är testat lokalt med
+Installation och Turnstile-aktivering är genomförda, se proven nedan. Kvar är
+lyckat inloggningsprov med testkontots nya lösenord och begärt sparande av
+nyckelparet i 1Password. Tvåfaktorstödet är testat lokalt med
 Two Factor, men inget 2FA-tillägg har installerats på agoodsite.se. PR #4 är
 fortsatt ett utkast; ingen release eller installation på kundsajter har gjorts.
 
@@ -120,4 +120,27 @@ eller kontoinbjudan skickades. Ett baseline-prov av native lösenordsåterställ
 med avstängt Turnstile gav bekräftelsesidan och ett verifierat mejl i inkorgen
 den 17 oktober kl. 21:15. Endast testkontot berördes. Användaren behöver själv
 slutföra lösenordsbytet; inga lösenord eller resetlänkar finns i dokumentationen.
-Cloudflare-inloggning är separat och inväntas innan widget och nyckelpar kan skapas.
+Användaren har därefter bekräftat att testkontots lösenordsbyte är klart.
+
+## Aktivering och riktiga Cloudflare-prov 2026-10-17
+
+- Widgeten **AGoodMonitor – agoodsite.se pilot** skapades efter uttryckligt
+  godkännande i Cloudflare-kontot **Mats Ingerdal**. Ett hostname: `agoodsite.se`,
+  Managed-läge, pre-clearance av. Ingen DNS-ändring gjordes.
+- Nyckelparet överfördes direkt till WordPress. Secret finns inte i denna PR
+  eller dokumentation. Efter sparande är secret-input tom och admin anger att
+  nyckeln finns sparad. Användaren har beställt separat förvaring i 1Password;
+  det sparandet återstår eftersom appen är låst.
+- Det riktiga serverprovet med `agm_setup` och `agoodsite.se` lyckades. Därefter
+  aktiverades Turnstile; admin visar **Status: Aktiverat**. WooCommerce är av.
+- Fyra direkta POST-prov med testkontot: login och lostpassword, vardera med
+  saknad respektive ogiltig token. Samtliga svarade **HTTP 403** med modulens
+  botskyddsfel. Testlösenordet i nekade loginprov var avsiktligt ogiltigt.
+- Native lostpassword med automatiskt godkänd riktig Cloudflare-token gick
+  igenom. Bekräftelsesidan visades och ett nytt mejl till testadressen verifierades
+  i inkorgen **kl. 21:49**. Ingen annan användares återställning begärdes.
+- Hela lyckade inloggningen med testkontots nya lösenord inväntar användarens
+  prov i privat fönster. Administratörssessionen behålls i in-app-webbläsaren.
+  Utgången/återanvänd token och driftstörningar har verifierats lokalt enligt
+  testsuiten, men simuleras inte på den aktiverade sajten. 2FA är ännu inte
+  installerat och kan därför inte räknas som verifierat i denna pilot.
