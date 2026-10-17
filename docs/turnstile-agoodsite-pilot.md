@@ -165,7 +165,16 @@ Efter registrering ska följande live-prov köras med testkontot: normal login m
 Turnstile följt av TOTP, avvisad felaktig TOTP, login med en reservkod, samt nekat
 återbruk av samma reservkod. Behåll administratörssessionen under proven.
 De två 2FA-stegen ska gå via Two Factors egna handlers utan ett extra
-Turnstile-krav. Dessa live-prov är **inte utförda ännu**.
+Turnstile-krav.
+
+Uppföljning efter användarens registrering: testkontot har autentiseringsappen
+konfigurerad och aktiverad, men reservmetoden är avmarkerad och visar **0
+oanvända koder**. Användaren ombads komplettera just testkontots reservkoder.
+I separat Chrome-session gick riktig login med testkontots lösenord och giltig
+Turnstile vidare till Two Factors TOTP-ruta. Ett felaktigt kodförsök nekades med
+kort tidsbegränsning. Ingen extra Turnstile-widget krävdes på TOTP-steget.
+Giltig TOTP-kod från användarens Google Authenticator, reservkod och avvisat
+återbruk av reservkod är fortfarande **inte verifierade** på pilotsajten.
 
 Vid problem med testkontots 2FA: använd den inloggade administratören och ändra
 endast testkontots metoder i Användare → testkontots profil. Servervägen finns
