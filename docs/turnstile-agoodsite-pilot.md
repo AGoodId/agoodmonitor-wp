@@ -289,3 +289,17 @@ inloggning i in-app-webbläsaren med lösenord, Turnstile och nya appkoden.
 Användaren bekräftade att inloggningen fungerade. Agenten observerade därefter
 adminpanelen, **Hej, mats** och administratörsmenyerna i den nya sessionen.
 Administratörens reservkoder förbrukades inte under provet.
+
+## Oberoende kodgranskning och senare rättningar 2026-10-18
+
+Granskning av head 0aa0dd6 identifierade två fall som tidigare tester missade:
+alternativ registrerad 2FA-action kunde falla igenom till lösenordsinloggning,
+och kombinerade WooCommerce-login/resetmarkörer kunde verifiera fel action.
+Båda reproducerades lokalt före rättning. Nya regressioner och 68 integrations-
+samt 20 HTTP-assertioner kördes mot isolerad WP 7.1.3 / PHP 8.1.23 /
+WC 11.2.1 / Two Factor 0.17.0 med simulerad Cloudflare och uppfångad e-post.
+
+Rättningarna ligger i PR-grenen. Installerat pilotpaket är fortfarande det
+tidigare paketet från 3022309; ingen liveinstallation eller kundrelease gjordes
+under granskningen. Liveproven ovan ska därför inte beskrivas som verifiering
+av den senare rättade koden. Oberoende omgranskning följer på PR:ns nya head.

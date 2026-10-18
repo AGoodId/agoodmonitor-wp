@@ -43,7 +43,7 @@ function blocked( callable $operation ): bool {
 	return false;
 }
 function boot( array $settings ): AGoodMonitor_Turnstile {
-	foreach ( [ 'login_form_login', 'login_form_lostpassword', 'login_form_retrievepassword', 'login_form', 'lostpassword_form', 'woocommerce_login_form', 'woocommerce_lostpassword_form' ] as $hook ) {
+	foreach ( [ 'login_init', 'login_form_login', 'login_form_lostpassword', 'login_form_retrievepassword', 'login_form', 'lostpassword_form', 'woocommerce_login_form', 'woocommerce_lostpassword_form' ] as $hook ) {
 		remove_all_actions( $hook );
 	}
 	// Remove only this module's wp_loaded hook, preserving real WC handlers.
@@ -95,7 +95,7 @@ $_POST = [];
 $module = boot( [] );
 do_action( 'login_form_login' );
 do_action( 'login_form_lostpassword' );
-check( 0 === $http_calls && ! has_action( 'login_form_login' ), 'default-off installs no protection hooks or HTTP' );
+check( 0 === $http_calls && ! has_action( 'login_form_login' ) && ! has_action( 'login_init' ), 'default-off installs no protection hooks or HTTP' );
 ob_start(); do_action( 'login_form' ); check( '' === ob_get_clean(), 'default-off emits no widget' );
 check( ! wp_script_is( 'agoodmonitor-turnstile', 'enqueued' ), 'default-off loads no script' );
 
@@ -104,6 +104,14 @@ check( ! has_filter( 'authenticate', [ $module, 'verify' ] ), 'does not attach g
 check( blocked( static fn() => do_action( 'login_form_login' ) ), 'direct login POST missing token blocked' );
 check( blocked( static fn() => do_action( 'login_form_lostpassword' ) ), 'direct lostpassword POST missing token blocked' );
 check( blocked( static fn() => do_action( 'login_form_retrievepassword' ) ), 'legacy retrieval POST missing token blocked' );
+$action = 'validate_2fa';
+$_POST = [ 'log' => 'agm_turnstile_test', 'pwd' => 'test-only-disposable-password' ];
+check( blocked( static fn() => do_action( 'login_init' ) ), 'custom action password fallback fails closed without a token' );
+$_POST = [ 'authcode' => '123456', 'wp-auth-id' => '1' ];
+$before = $http_calls;
+do_action( 'login_init' );
+check( $before === $http_calls, 'genuine second-factor request has no additional Turnstile validation' );
+$action = 'login';
 foreach ( [ [], str_repeat( 'a', 2049 ), '' ] as $token ) {
 	$_POST = [ 'cf-turnstile-response' => $token ];
 	check( blocked( static fn() => do_action( 'login_form_login' ) ), 'malformed token fails closed' );
@@ -139,6 +147,9 @@ $_POST = [ 'login' => '1', 'username' => 'agm_turnstile_test', 'password' => 'te
 check( blocked( static fn() => $module->guard_woocommerce() ), 'WC direct login without token blocked' );
 $_POST = [ 'wc_reset_password' => '1', 'user_login' => 'agm_turnstile_test' ];
 check( blocked( static fn() => $module->guard_woocommerce() ), 'WC direct retrieval without token blocked' );
+$_POST = [ 'login' => '1', 'username' => 'test', 'password' => 'test', 'wc_reset_password' => '1', 'user_login' => 'agm_turnstile_test', 'cf-turnstile-response' => 'mixed-wc' ];
+$before = $http_calls;
+check( blocked( static fn() => $module->guard_woocommerce() ) && $before === $http_calls, 'mixed WC handlers blocked before Siteverify or side effects' );
 $expected_action = 'agm_wc_login';
 $_POST = [ 'login' => '1', 'username' => 'agm_turnstile_test', 'password' => 'test-only-disposable-password', 'cf-turnstile-response' => 'wc-valid' ];
 $module->guard_woocommerce();

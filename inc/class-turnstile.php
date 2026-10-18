@@ -53,6 +53,7 @@ class AGoodMonitor_Turnstile {
 			return;
 		}
 		// Early action gates also cover POSTs without a rendered widget or nonce.
+		add_action( 'login_init', [ $this, 'guard_login_fallback' ], -1000 );
 		add_action( 'login_form_login', [ $this, 'guard_login' ], -1000 );
 		add_action( 'login_form_lostpassword', [ $this, 'guard_lostpassword' ], -1000 );
 		add_action( 'login_form_retrievepassword', [ $this, 'guard_lostpassword' ], -1000 );
@@ -69,15 +70,35 @@ class AGoodMonitor_Turnstile {
 		$this->guard( 'agm_login' );
 	}
 
+	/** A registered custom action may return and fall through to core wp_signon. */
+	public function guard_login_fallback(): void {
+		global $action;
+		// Core resolves the action before login_init. The normal login hook below
+		// owns action=login; genuine 2FA challenges post no password credentials.
+		if ( 'login' !== $action && ( isset( $_POST['log'] ) || isset( $_POST['pwd'] ) ) ) {
+			$this->guard( 'agm_login' );
+		}
+	}
+
 	public function guard_lostpassword(): void {
 		$this->guard( 'agm_lostpassword' );
 	}
 
 	public function guard_woocommerce(): void {
 		// Same markers used by WC_Form_Handler; no URL/referrer dependency.
-		if ( isset( $_POST['login'], $_POST['username'], $_POST['password'] ) ) {
+		$login = isset( $_POST['login'], $_POST['username'], $_POST['password'] );
+		$reset = isset( $_POST['wc_reset_password'], $_POST['user_login'] );
+		// WC runs these handlers independently. Never verify one action and
+		// then reach the other handler using its different nonce.
+		if ( $login && $reset ) {
+			if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+				wp_die( $this->failure(), esc_html__( 'Botskydd', 'agoodmonitor' ), [ 'response' => 403, 'back_link' => true ] );
+			}
+			return;
+		}
+		if ( $login ) {
 			$this->guard( 'agm_wc_login' );
-		} elseif ( isset( $_POST['wc_reset_password'], $_POST['user_login'] ) ) {
+		} elseif ( $reset ) {
 			$this->guard( 'agm_wc_lostpassword' );
 		}
 	}

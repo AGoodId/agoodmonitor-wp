@@ -60,6 +60,10 @@ WooCommerce-tillval, återställningskonstant och secret i HTML/autoload.
    TOTP och reservkoder är engångskoder.
 
 Körda versioner: WP 7.1.3 / PHP 8.1.23 / WC 11.2.1 / Two Factor 0.17.0.
+Senaste omkörning 2026-10-18: 68 integrationsassertioner och 20 HTTP-assertioner.
+Regressionerna omfattar lösenords-POST via registrerad alternativ 2FA-action
+(utan, med ogiltig och med giltig Turnstile-token) samt tvetydiga WC-POST med
+både login- och resetmarkörer och giltig token för respektive action.
 Siteverify-simulering verifierar vårt kontrakt och hantering av svar; den är
 inget test av Cloudflares faktiska nätverk eller browser-challenge. Följ därför
 även den manuella pilotchecklistan i [docs/turnstile.md](../docs/turnstile.md).

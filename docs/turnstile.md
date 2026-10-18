@@ -39,6 +39,13 @@ Secret-input är alltid tom i serverns HTML; tomt vid sparande behåller nyckeln
 Kryssrutan för radering tar bort den. Avinstallation raderar konfigurationen.
 Konfigurationskvitton innehåller bara en HMAC och löper ut efter tio minuter.
 
+Native lösenordsinloggning skyddas även när en registrerad alternativ action
+(exempelvis ett 2FA-tilläggs action) återgår till WordPress vanliga inloggning.
+Den tidiga kontrollen gäller då POST med log/pwd på wp-login.php. Äkta
+2FA-begäranden utan lösenordsfält kräver ingen extra Turnstile-token.
+Tvetydiga WooCommerce-POST med både login- och resetmarkörer nekas innan
+Siteverify, eftersom WooCommerce annars kan köra de två handlerna oberoende.
+
 ## Fel och återställning
 
 Saknad, felaktig, utgången/återanvänd token, fel hostname/action, felaktiga nycklar,
@@ -142,8 +149,11 @@ skanning eller DNS-förändring implementeras här.
 
 Se [tests/README.md](../tests/README.md). Lokalt verifierat med disponibel
 WordPress 7.1.3, PHP 8.1.23, WooCommerce 11.2.1 och Two Factor 0.17.0:
-65 integrationsassertioner och 15 HTTP-assertioner med kompletta flöden för login,
+68 integrationsassertioner och 20 HTTP-assertioner med kompletta flöden för login,
 resetbegäran, TOTP och reservkod. Siteverify är simulerat och all e-post fångas.
+Omkört 2026-10-18 efter oberoende granskning, inklusive alternativ 2FA-action
+och kombinerade WooCommerce-markörer. Dessa rättningar är ännu inte
+installerade på pilotsajten; tidigare liveprov gäller dess äldre pilotpaket.
 Äldre stödda WP/PHP-versioner och andra 2FA-tillägg har inte körts.
 
 På `agoodsite.se` installerades och aktiverades pilotversionen 2026-10-17.

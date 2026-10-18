@@ -51,6 +51,15 @@ def login(user='agm_turnstile_test', captcha=None, jar=None):
 
 check(login()[0] == 403, 'native direct POST without token blocked')
 check(login(captcha='invalid')[0] == 403, 'native invalid token blocked')
+fallback_credentials = {'log': 'agm_turnstile_test', 'pwd': 'test-only-disposable-password'}
+check(request('/wp-login.php?action=validate_2fa', fallback_credentials)[0] == 403,
+      'registered 2FA action cannot fall through to password login without Turnstile')
+check(request('/wp-login.php?action=validate_2fa', {**fallback_credentials, 'cf-turnstile-response': 'invalid'})[0] == 403,
+      'registered 2FA action rejects invalid Turnstile on password fallback')
+fallback_jar = http.cookiejar.CookieJar()
+request('/wp-login.php?action=validate_2fa', {**fallback_credentials, 'cf-turnstile-response': token('agm_login')}, fallback_jar)
+check(any(c.name.startswith('wordpress_logged_in_') for c in fallback_jar),
+      'password fallback still permits a login with a correctly verified token')
 valid = token('agm_login')
 jar = http.cookiejar.CookieJar()
 login(captcha=valid, jar=jar)
@@ -77,6 +86,13 @@ check(any(c.name.startswith('wordpress_logged_in_') for c in wc_jar), 'real WC f
 lost_path = account_path + '&lost-password'
 _, lost_form, _ = request(lost_path)
 lost_nonce = re.search(r'name="woocommerce-lost-password-nonce"[^>]*value="([^"]+)"', lost_form).group(1)
+mixed_wc = {**wc_data, 'wc_reset_password': '1', 'user_login': 'agm_turnstile_test',
+            'woocommerce-lost-password-nonce': lost_nonce,
+            'cf-turnstile-response': token('agm_wc_login')}
+check(request(lost_path, mixed_wc)[0] == 403,
+      'combined WC login/reset POST cannot use a login token to request reset mail')
+check(request(lost_path, {**mixed_wc, 'cf-turnstile-response': token('agm_wc_lostpassword')})[0] == 403,
+      'combined WC handlers are rejected even with a valid reset-action token')
 _, _, lost_url = request(lost_path, {'wc_reset_password': '1', 'user_login': 'agm_turnstile_test', 'woocommerce-lost-password-nonce': lost_nonce, 'cf-turnstile-response': token('agm_wc_lostpassword')})
 check('reset-link-sent=true' in lost_url, 'real WC reset handler reaches confirmation with intercepted mail')
 
