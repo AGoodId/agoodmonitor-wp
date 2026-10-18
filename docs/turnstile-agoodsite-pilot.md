@@ -199,3 +199,66 @@ endast testkontots metoder i Användare → testkontots profil. Servervägen fin
 även via Two Factors `wp two-factor`-kommandon; en full 2FA-reset är en separat,
 avsiktlig säkerhetsåtgärd och ska inte göras automatiskt vid fel. Turnstiles
 återställningskonstant påverkar inte Two Factor.
+
+## Byte till WP 2FA 2026-10-17
+
+Efter läsande jämförelse med Liljevalchs beställde användaren byte till
+**WP 2FA från Melapress 4.2.1**, med prov på testkontot före egen administratör.
+Liljevalchs ändrades inte. WP 2FA installerades från WordPress.org och
+`wp plugin verify-checksums wp-2fa` godkände filerna.
+
+Färsk privat backup före bytet finns i
+`/home/agoodsit/.agoodmonitor-backups/20261017-pre-wp2fa/`: `database.sql` och
+`auth-files.tar.gz` med wp-config.php, Two Factor och AGoodMonitor. Gzip-test
+godkänt; skapade med umask 077 utanför publik rot. Serverterminalen fungerar.
+Endast testkontot ID 8 hade registrerade metoder i Two Factor vid inventeringen.
+
+WP 2FA:s policy har autentiseringsapp och reservkoder på, e-post av och inget
+generellt 2FA-tvång. Inga extra säkerhetstillägg installerades av guiden.
+Användaren registrerade testkontot på nytt och sparade nya reservkoder.
+Efter omladdning visade profilen TOTP, Backup codes och tio oanvända koder.
+Two Factor inaktiverades därefter; filer och gamla data bevarades. Prova inte
+inloggning med båda tilläggen aktiva.
+
+Turnstiles adminstatus är fortsatt **Aktiverat**. Ett nytt login med testkontots
+lösenord och automatisk riktig Turnstile-verifiering nådde WP 2FA:s
+Verification Code-steg. TOTP-inloggning och reservkodsprov följs upp separat;
+administratörskontots registrering avvaktar dessa prov.
+
+Återställning av WP 2FA vid utelåsning: använd i första hand en reservkod eller
+en annan behörig administratör. Sista servervägen är att avsiktligt inaktivera
+enbart `wp-2fa`, exempelvis via cPanel-terminalen med
+`wp --path=/home/agoodsit/public_html --skip-plugins --skip-themes plugin deactivate wp-2fa`,
+eller byta namn på dess katalog med filhanteraren. Detta tar bort 2FA-kravet
+för alla konton under återställningen och får inte ske som automatisk fallback.
+Behåll Turnstile, återaktivera WP 2FA och verifiera kontot efter återställningen.
+Turnstiles nödstopp påverkar inte WP 2FA. Återaktivera inte gamla Two Factor
+samtidigt; en eventuell återgång är ett separat kontrollerat byte.
+
+Källa: [Melapress: återställning efter 2FA-utelåsning](https://melapress.com/recover-from-2fa-lockout/).
+
+### WP 2FA-prov genomförda 2026-10-18
+
+- Användaren bekräftade TOTP-inloggning. Agenten verifierade därefter en
+  inloggad profil för testkontot med TOTP, reservkoder och tio oanvända koder.
+- Testkontot loggades ut. Ny login med dess sparade lösenord och automatisk
+  riktig Turnstile-token nådde WP 2FA. En befintlig 16-siffrig reservkod från
+  användarens privata 1Password-post **WP 2FA agoodsite** accepterades.
+  Profilen visade rätt konto och **9 unused backup codes remaining**.
+- En ny inloggning startades. Ett för tidigt submit utan färdig Turnstile-token
+  nekades med modulens botskyddsfel. Efter återgång till formuläret och färdig
+  automatisk verifiering gick login vidare till WP 2FA.
+- Exakt samma förbrukade reservkod nekades med **ERROR: Invalid backup code**.
+  Inget extra Turnstile-krav dök upp på WP 2FA:s reservkodssteg.
+- Testsessionen lämnades utloggad. 1Password-anteckningen kompletterades med
+  att första koden i listan är förbrukad och nio återstår. Alla ursprungliga
+  kodvärden bevarades; inga koder eller lösenord finns i dokumentationen.
+- Administratörssessionen **mats** behölls separat. Kontots profil visade att
+  WP 2FA ännu saknades. Registreringsguiden öppnades efter godkända testprov;
+  användarens registrering och ett riktigt administratörslogin återstår.
+
+Dessa prov gäller WP 2FA 4.2.1 på agoodsite.se. TOTP-inloggningen är
+användarbekräftad och den efterföljande sessionen observerad av agenten;
+reservkod, förbrukning och nekat återbruk är agentverifierade. Tidigare lokal
+suite gäller fortfarande Two Factor, inte WP 2FA. WooCommerce är inte aktiverat
+på pilotsajten och dess samverkan med WP 2FA är inte verifierad här.

@@ -118,12 +118,16 @@ Siteverify-requestens `secret` och `response` i sådan extern instrumentering.
 
 ## 2FA och begränsning av upprepade försök
 
-Pilotförslag: etablerade **Two Factor** med TOTP och engångsreservkoder, under
-förutsättning att sajten inte redan har en fungerande lösning. Dess separata
-`validate_2fa`/`revalidate_2fa`-steg får inget nytt Turnstile-krav. Inget eget
-2FA-system byggs. Tvingande utrullning per roll kräver separat beslut; Two Factor
-har inte ett inbyggt UI för generell rollpolicy. Andra 2FA-tillägg är inte
-kompatibilitetsverifierade i denna leverans.
+Vald fortsatt pilot: **WP 2FA** från Melapress, efter jämförelse med den
+befintliga lösningen på Liljevalchs och användarens beslut 2026-10-17.
+Använd autentiseringsapp (TOTP) och engångsreservkoder. Registrera och testa
+testkontot före administratörskontot; inför ingen generell rollpolicy under
+piloten. Inget eget 2FA-system byggs. WP 2FA 4.2.1 är nu live-provat på testkontot:
+TOTP-inloggning användarbekräftad, reservkod och nekat återbruk agentverifierade.
+De tidigare lokala proven gäller **Two Factor 0.17.0**, vars separata
+`validate_2fa`/`revalidate_2fa`-steg inte får något nytt Turnstile-krav.
+Kör inte inloggningsprov med båda 2FA-tilläggen aktiva. Behåll det gamla
+tilläggets filer och data för kontrollerad återställning under bytet.
 
 Rekommendation för rate limiting: inventera först befintligt säkerhetstillägg
 och hostingens begränsningar. Använd en befintlig, underhållen lösning om den
@@ -156,6 +160,9 @@ verifierat riktig reservkodsinloggning efter Turnstile, minskning från tio till
 nio oanvända koder och nekat återbruk av samma kod i en ny inloggning. Ett felaktigt
 TOTP-försök nekades också. Andra användares 2FA eller generell rollpolicy ingår
 inte i dessa prov.
+Efter användarens beslut ersattes Two Factor av WP 2FA 4.2.1. Live-proven för
+testkontots TOTP och reservkoder, separat backup och återställningsväg finns i
+pilotprotokollet. Administratörskontots registrering och login återstår.
 Ingen installation har gjorts
 på det tidigare pilotmålet agoodid2026.agoodsite.se eller på kundsajter. En godkänd
 lokal suite innebär inte att pilotsajten är verifierad.
@@ -171,3 +178,4 @@ lokal suite innebär inte att pilotsajten är verifierad.
 - [WordPress core: wp-login.php](https://github.com/WordPress/WordPress/blob/master/wp-login.php)
 - [WooCommerce: standardhandlers](https://github.com/woocommerce/woocommerce/blob/trunk/plugins/woocommerce/includes/class-wc-form-handler.php)
 - [Two Factor: officiell tilläggssida](https://wordpress.org/plugins/two-factor/)
+- [WP 2FA: installationsguide (kontrollerad 2026-10-17)](https://melapress.com/support/kb/wp-2fa-plugin-getting-started/)
