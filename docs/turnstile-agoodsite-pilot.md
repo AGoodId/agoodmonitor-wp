@@ -5,7 +5,22 @@ Det ersätter det tidigare första testmålet `agoodid2026.agoodsite.se`.
 Endast denna installation omfattas; ingen release till kundsajter eller
 installation på Lorensbergs ingår.
 
-## Kontrollerat
+## Slutstatus 2026-10-18
+
+Piloten på agoodsite.se är installerad och verifierad. Turnstile är aktiverat
+för native WordPress login och lösenordsåterställning. **WP 2FA 4.2.1** är valt
+2FA-tillägg; tidigare Two Factor är inaktivt med filer/data bevarade.
+Testkontots TOTP, reservkodsinloggning, kodförbrukning och nekat återbruk är
+verifierade enligt nedan. Administratören **mats** har TOTP och tio oanvända
+reservkoder; ny riktig administratörsinloggning är användarbekräftad och den
+inloggade adminpanelen observerad av agenten. Ingen generell rollpolicy infördes.
+
+Backup, separata återställningsvägar, nyckelförvaring och testresultat finns
+nedan. Äldre installationsanteckningar är historiska ögonblicksbilder.
+PR #4 är fortfarande ett granskningsbart utkast; oberoende kodgranskning och
+beslut om merge/release återstår. Ingen kundsajt har fått installationen.
+
+## Ursprunglig installationskontroll 2026-10-17
 
 - `https://agoodsite.se/wp-admin/plugins.php` leder till sajtens egen
   WordPress-inloggning med titeln **AGoodSite**.
@@ -75,13 +90,14 @@ plugin-katalogen via serveråtkomst. Vid utelåsning efter Turnstile-aktivering:
 lägg `define( 'AGOODMONITOR_TURNSTILE_DISABLE', true );` i `wp-config.php` före
 WordPress-laddningen. Återställningskonstanten påverkar inte separat 2FA.
 
-## Kvar före färdig installation
+## Leverans och granskning
 
 Installation, Turnstile-aktivering, testkontots inloggningsprov och sparande i
-1Password är genomförda, se proven nedan. Tvåfaktorstödet är testat lokalt med
-Two Factor. Two Factor 0.17.0 är nu installerat på agoodsite.se; registrering och
-verifiering på testkontot återstår enligt avsnittet nedan. PR #4 är
-fortsatt ett utkast; ingen release eller installation på kundsajter har gjorts.
+1Password är genomförda, se proven nedan. Lokala automatiserade 2FA-prov gäller
+Two Factor; de senare live-proven gäller det valda WP 2FA. Både testkontot och
+administratören mats är registrerade och inloggning verifierad. PR #4 är
+fortsatt ett utkast med oberoende kodgranskning kvar före merge; ingen release
+eller installation på kundsajter har gjorts.
 
 ## Backup och återställningsåtkomst verifierade 2026-10-17
 
@@ -255,10 +271,21 @@ Källa: [Melapress: återställning efter 2FA-utelåsning](https://melapress.com
   kodvärden bevarades; inga koder eller lösenord finns i dokumentationen.
 - Administratörssessionen **mats** behölls separat. Kontots profil visade att
   WP 2FA ännu saknades. Registreringsguiden öppnades efter godkända testprov;
-  användarens registrering och ett riktigt administratörslogin återstår.
+  registrering och administratörslogin slutfördes därefter enligt nedan.
 
 Dessa prov gäller WP 2FA 4.2.1 på agoodsite.se. TOTP-inloggningen är
 användarbekräftad och den efterföljande sessionen observerad av agenten;
 reservkod, förbrukning och nekat återbruk är agentverifierade. Tidigare lokal
 suite gäller fortfarande Two Factor, inte WP 2FA. WooCommerce är inte aktiverat
 på pilotsajten och dess samverkan med WP 2FA är inte verifierad här.
+
+### Administratörskontot slutfört 2026-10-18
+
+Användaren registrerade **mats** i autentiseringsappen och bekräftade att nya
+reservkoder sparats separat från testkontots. Agenten laddade om profilen och
+verifierade TOTP som primär metod, Backup codes som sekundär och tio oanvända
+koder. Befintlig Chrome-adminsession behölls medan användaren gjorde en ny
+inloggning i in-app-webbläsaren med lösenord, Turnstile och nya appkoden.
+Användaren bekräftade att inloggningen fungerade. Agenten observerade därefter
+adminpanelen, **Hej, mats** och administratörsmenyerna i den nya sessionen.
+Administratörens reservkoder förbrukades inte under provet.

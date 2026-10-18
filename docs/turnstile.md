@@ -162,7 +162,9 @@ TOTP-försök nekades också. Andra användares 2FA eller generell rollpolicy in
 inte i dessa prov.
 Efter användarens beslut ersattes Two Factor av WP 2FA 4.2.1. Live-proven för
 testkontots TOTP och reservkoder, separat backup och återställningsväg finns i
-pilotprotokollet. Administratörskontots registrering och login återstår.
+pilotprotokollet. Administratören mats har också registrerats med TOTP och tio
+reservkoder. Ny inloggning med Turnstile och appkod är användarbekräftad;
+agenten observerade den inloggade administratörssessionen 2026-10-18.
 Ingen installation har gjorts
 på det tidigare pilotmålet agoodid2026.agoodsite.se eller på kundsajter. En godkänd
 lokal suite innebär inte att pilotsajten är verifierad.
