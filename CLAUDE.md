@@ -2,10 +2,11 @@
 
 ## Vad är det här?
 
-WordPress-plugin som körs på alla AGoodId-kundsajter. Det gör två saker:
+WordPress-plugin som körs på alla AGoodId-kundsajter. Ansvar:
 
 1. **Health reporting** — Samlar in data om WP-core, plugins, tema och Site Health och skickar till AGoodMember API varje timme.
 2. **Security hardening** — Site-wide härdning (HTTP-headers, fingerprinting, attackyta) som gäller oavsett aktivt tema.
+3. **Valbart botskydd** — Cloudflare Turnstile på native WP login/lostpassword och valfria WooCommerce-standardformulär. Avstängt som standard; sajtinställningar, verifierat konfigurationsprov och serverstyrd återställning. Se `docs/turnstile.md`.
 
 Pluginet är alltid aktivt och ska inte konkurrera med temats ansvar. Temats äger output-specifik säkerhet (escaping, nonces, capability checks). Pluginet äger det som ska gälla hela sajten oavsett tema.
 
@@ -18,6 +19,7 @@ agoodmonitor.php              Plugin-huvud — defines, require_once, instansier
 uninstall.php                 Städar options, transients, cron, tabell och .htaccess vid avinstallation
 inc/
   class-hardening.php         Security hardening (HTTP-headers, fingerprinting, XML-RPC, m.m.)
+  class-turnstile.php         Valbart botskydd, servervalidering och eget admin-UI
   class-health-reporter.php   Hälsoinsamling, cron-schemaläggning, admin UI, AJAX
   class-link-monitor.php      Passiv 404/redirect-loggning, DB-tabell, admin UI
   github-updater.php          Auto-uppdatering via GitHub Releases
@@ -31,6 +33,13 @@ sprints/
 
 ### Konfiguration via filters
 Alla härdningsåtgärder är avstängbara via `apply_filters()`. Namnkonvention: `agoodmonitor_{åtgärd}` (bool). Exempel: `agoodmonitor_disable_xmlrpc`, `agoodmonitor_strip_version_query`. Inga settings i databasen för härdning — filters i `functions.php` räcker.
+
+Undantag: Turnstile har ett separat per-sajt-option `agoodmonitor_turnstile`
+(ej autoload), med site key, secret key, enabled och woocommerce. Inget av detta
+läggs i health reports. Secret visas aldrig i admin-HTML. Återställning via
+`AGOODMONITOR_TURNSTILE_DISABLE=true` i wp-config.php. Ändrade nycklar/tillval
+stänger av skyddet tills ett nytt prov körts. 2FA och rate limiting ägs fortsatt
+av separata etablerade lösningar, inte Turnstile-modulen eller temat.
 
 ### GitHub-baserade auto-uppdateringar
 `inc/github-updater.php` kopplar in i WordPress uppdateringssystem. WP-admin visar en vanlig uppdateringsnotis när en ny GitHub Release taggas. Versionen i plugin-headern (`Version: X.Y.Z` i `agoodmonitor.php`) måste matcha release-taggen (utan `v`-prefix). `AGOODMONITOR_VERSION`-konstanten definieras manuellt i plugin-headern — kom ihåg att uppdatera den vid varje release.
@@ -86,7 +95,9 @@ Skapas på `admin_init` (en gång), bara på Apache (kontroll via `SERVER_SOFTWA
 
 ## Testning
 
-Ingen automatiserad testsuite. Manuell verifiering per sprint — se respektive sprint-dokument för checklistor.
+Turnstile har isolerade WordPress/WooCommerce/Two Factor-integrationstester och
+HTTP-tester i `tests/`; se `tests/README.md`. Övriga moduler har manuell
+verifiering per sprint — se respektive sprint-dokument för checklistor.
 
 Snabbkoll efter förändring i `class-hardening.php`:
 - `curl -I https://sajt.se` — verifiera att `X-Powered-By` är borta och att security headers finns

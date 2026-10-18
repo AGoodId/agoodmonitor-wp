@@ -15,6 +15,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_option( 'agoodmonitor_api_key' );
 delete_option( 'agoodmonitor_api_url' );
 delete_option( 'agoodmonitor_last_report' );
+delete_option( 'agoodmonitor_turnstile' );
 
 // Transient för Site Health-cache.
 delete_transient( 'agoodmonitor_health_issues' );
